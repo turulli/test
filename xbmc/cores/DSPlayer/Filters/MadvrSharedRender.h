@@ -31,6 +31,9 @@ public:
 
   HRESULT CreateTextures(IDirect3DDevice9Ex* pD3DDeviceKodi, IDirect3DDevice9Ex* pD3DDeviceMadVR, int width, int height);
   HRESULT RenderMadvr(MADVR_RENDER_LAYER layer, int width, int height);
+  HRESULT StoreKodiDeviceState();
+  HRESULT SetupKodiDeviceState();
+  HRESULT RestoreKodiDeviceState();
   
 private:
   HRESULT RenderToTexture(MADVR_RENDER_LAYER layer);
@@ -71,6 +74,10 @@ private:
   DWORD m_D3DRS_ALPHABLENDENABLE = 0;
   DWORD m_D3DRS_SRCBLEND = 0;
   DWORD m_D3DRS_DESTBLEND = 0;
+
+  DWORD m_KODI_D3DRS_SEPARATEALPHABLENDENABLE = 0;
+  DWORD m_KODI_D3DRS_SRCBLENDALPHA = 0;
+  DWORD m_KODI_D3DRS_DESTBLENDALPHA = 0;
 
   IDirect3DPixelShader9* m_pPix = nullptr;
 };

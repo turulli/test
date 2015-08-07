@@ -119,6 +119,7 @@ HRESULT CMadvrSharedRender::RenderMadvr(MADVR_RENDER_LAYER layer, int width, int
   // Render Kodi Gui
   RenderToTexture(layer);
   m_pD3DDeviceKodi->BeginScene();
+
   (layer == RENDER_LAYER_UNDER) ? g_windowManager.Render() : g_application.RenderNoPresent();
   g_renderManager.NewFrame();
   m_pD3DDeviceKodi->EndScene();
@@ -235,6 +236,22 @@ HRESULT CMadvrSharedRender::SetupVertex()
   return hr;
 }
 
+HRESULT CMadvrSharedRender::StoreKodiDeviceState()
+{
+  HRESULT hr = E_UNEXPECTED;
+
+  if (FAILED(hr = m_pD3DDeviceKodi->GetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, &m_KODI_D3DRS_SEPARATEALPHABLENDENABLE)))
+    return hr;
+
+  if (FAILED(hr = m_pD3DDeviceKodi->GetRenderState(D3DRS_SRCBLENDALPHA, &m_KODI_D3DRS_SRCBLENDALPHA)))
+    return hr;
+
+  if (FAILED(hr = m_pD3DDeviceKodi->GetRenderState(D3DRS_DESTBLENDALPHA, &m_KODI_D3DRS_DESTBLENDALPHA)))
+    return hr;
+
+  return hr;
+}
+
 HRESULT CMadvrSharedRender::StoreMadDeviceState()
 {
   HRESULT hr = E_UNEXPECTED;
@@ -274,10 +291,23 @@ HRESULT CMadvrSharedRender::StoreMadDeviceState()
 
   if (FAILED(hr = m_pD3DDeviceMadVR->GetPixelShader(&m_pPix)))
     return hr;
+}
+
+HRESULT CMadvrSharedRender::SetupKodiDeviceState()
+{
+  HRESULT hr = E_UNEXPECTED;
+
+  if (FAILED(hr = m_pD3DDeviceKodi->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, TRUE)))
+    return hr;
+
+  if (FAILED(hr = m_pD3DDeviceKodi->SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_ONE)))
+    return hr;
+
+  if (FAILED(hr = m_pD3DDeviceKodi->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_INVSRCALPHA)))
+    return hr;
 
   return hr;
 }
-
 HRESULT CMadvrSharedRender::SetupMadDeviceState()
 {
   HRESULT hr = E_UNEXPECTED;
@@ -316,6 +346,22 @@ HRESULT CMadvrSharedRender::SetupMadDeviceState()
     return hr;
 
   if (FAILED(hr = m_pD3DDeviceMadVR->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA)))
+    return hr;
+
+  return hr;
+}
+
+HRESULT CMadvrSharedRender::RestoreKodiDeviceState()
+{
+  HRESULT hr = E_UNEXPECTED;
+
+  if (FAILED(hr = m_pD3DDeviceKodi->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, m_KODI_D3DRS_SEPARATEALPHABLENDENABLE)))
+    return hr;
+
+  if (FAILED(hr = m_pD3DDeviceKodi->SetRenderState(D3DRS_SRCBLENDALPHA, m_KODI_D3DRS_SRCBLENDALPHA)))
+    return hr;
+
+  if (FAILED(hr = m_pD3DDeviceKodi->SetRenderState(D3DRS_DESTBLENDALPHA, m_KODI_D3DRS_DESTBLENDALPHA)))
     return hr;
 
   return hr;

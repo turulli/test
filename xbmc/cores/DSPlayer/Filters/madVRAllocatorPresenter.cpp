@@ -83,6 +83,7 @@ CmadVRAllocatorPresenter::~CmadVRAllocatorPresenter()
     pMadVrCmd->SendCommand("restoreDisplayModeNow");
 
   g_renderManager.UnInit();
+  m_pMadvrShared->RestoreKodiDeviceState();
   
   // the order is important here
   CMadvrCallback::Destroy();
@@ -234,6 +235,8 @@ HRESULT CmadVRAllocatorPresenter::SetDevice(IDirect3DDevice9* pD3DDev)
 
     m_firstBoot = false;
     m_threadID = CThread::GetCurrentThreadId();
+    m_pMadvrShared->StoreKodiDeviceState();
+    m_pMadvrShared->SetupKodiDeviceState();
   }
 
   Com::SmartSize size;
