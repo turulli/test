@@ -31,7 +31,6 @@
 #include "streams.h"
 #include "utils/CharsetConverter.h"
 #include "system.h"
-#include "Utils\log.h"
 
 enum MADVR_RENDER_LAYER
 {

@@ -33,6 +33,7 @@
 #include "settings/DisplaySettings.h"
 #include "PixelShaderList.h"
 #include "DSPlayer.h"
+#include "settings/AdvancedSettings.h"
 
 #define ShaderStage_PreScale 0
 #define ShaderStage_PostScale 1
@@ -57,6 +58,7 @@ CmadVRAllocatorPresenter::CmadVRAllocatorPresenter(HWND hWnd, HRESULT& hr, CStdS
   m_isEnteringExclusive = false;
   m_updateDisplayLatencyForMadvr = false;
   m_threadID = 0;
+  m_kodiGuiDirtyAlgo = g_advancedSettings.m_guiAlgorithmDirtyRegions;
   m_pMadvrShared = DNew CMadvrSharedRender();
   
   if (FAILED(hr)) {
@@ -88,6 +90,7 @@ CmadVRAllocatorPresenter::~CmadVRAllocatorPresenter()
     pMadVrCmd->SendCommand("restoreDisplayModeNow");
 
   g_renderManager.UnInit();
+  g_advancedSettings.m_guiAlgorithmDirtyRegions = m_kodiGuiDirtyAlgo;
   m_pMadvrShared->RestoreKodiDeviceState();
   
   // the order is important here
@@ -237,6 +240,7 @@ HRESULT CmadVRAllocatorPresenter::SetDevice(IDirect3DDevice9* pD3DDev)
 
     m_firstBoot = false;
     m_threadID = CThread::GetCurrentThreadId();
+    g_advancedSettings.m_guiAlgorithmDirtyRegions = DIRTYREGION_SOLVER_FILL_VIEWPORT_ALWAYS;
     m_pMadvrShared->StoreKodiDeviceState();
     m_pMadvrShared->SetupKodiDeviceState();
   }
