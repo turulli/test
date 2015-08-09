@@ -74,6 +74,11 @@ CmadVRAllocatorPresenter::~CmadVRAllocatorPresenter()
     ((CSubRenderCallback*)(ISubRenderCallback2*)m_pSRCB)->SetDXRAP(nullptr);
   }
 
+  if (m_pORCB) {
+    // nasty, but we have to let it know about our death somehow
+    ((COsdRenderCallback*)(IOsdRenderCallback*)m_pORCB)->SetDXRAP(nullptr);
+  }
+
   // Unregister madVR Exclusive Callback
   if (Com::SmartQIPtr<IMadVRExclusiveModeCallback> pEXL = m_pDXR)
     pEXL->Unregister(m_exclusiveCallback, this);
@@ -372,7 +377,6 @@ STDMETHODIMP CmadVRAllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
 
 void CmadVRAllocatorPresenter::SetMadvrPosition(CRect wndRect, CRect videoRect)
 {
-
   Com::SmartRect wndR(wndRect.x1, wndRect.y1, wndRect.x2, wndRect.y2);
   Com::SmartRect videoR(videoRect.x1, videoRect.y1, videoRect.x2, videoRect.y2);
   SetPosition(wndR, videoR);

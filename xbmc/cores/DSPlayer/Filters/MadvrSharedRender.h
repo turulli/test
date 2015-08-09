@@ -31,6 +31,7 @@ public:
 
   HRESULT CreateTextures(IDirect3DDevice9Ex* pD3DDeviceKodi, IDirect3DDevice9Ex* pD3DDeviceMadVR, int width, int height);
   HRESULT RenderMadvr(MADVR_RENDER_LAYER layer, int width, int height);
+  HRESULT CreateSharedResource(IDirect3DTexture9** ppTextureMadvr, IDirect3DTexture9** ppTextureKodi);
   HRESULT StoreKodiDeviceState();
   HRESULT SetupKodiDeviceState();
   HRESULT RestoreKodiDeviceState();
@@ -39,18 +40,15 @@ private:
   HRESULT RenderToTexture(MADVR_RENDER_LAYER layer);
   HRESULT RenderTexture(MADVR_RENDER_LAYER layer);
   HRESULT SetupVertex();
-
   HRESULT StoreMadDeviceState();
   HRESULT SetupMadDeviceState();
   HRESULT RestoreMadDeviceState();
 
-  Com::SmartPtr<IDirect3DTexture9> m_pKodiUnderTexture = nullptr;
-  Com::SmartPtr<IDirect3DTexture9> m_pKodiOverTexture = nullptr;
-  Com::SmartPtr<IDirect3DTexture9> m_pMadvrUnderTexture = nullptr;
-  Com::SmartPtr<IDirect3DTexture9> m_pMadvrOverTexture = nullptr;
-  Com::SmartPtr<IDirect3DVertexBuffer9> m_pMadvrVertexBuffer = nullptr;
-  HANDLE m_pSharedUnderHandle = nullptr;
-  HANDLE m_pSharedOverHandle = nullptr;
+  IDirect3DTexture9* m_pKodiUnderTexture = nullptr;
+  IDirect3DTexture9* m_pKodiOverTexture = nullptr;
+  IDirect3DTexture9* m_pMadvrUnderTexture = nullptr;
+  IDirect3DTexture9* m_pMadvrOverTexture = nullptr;
+  IDirect3DVertexBuffer9* m_pMadvrVertexBuffer = nullptr;
 
   IDirect3DDevice9Ex* m_pD3DDeviceKodi = nullptr;
   IDirect3DDevice9Ex* m_pD3DDeviceMadVR = nullptr;
@@ -58,7 +56,7 @@ private:
   DWORD m_dwWidth = 0;
   DWORD m_dwHeight = 0;
 
-  // stored mad device state
+  // stored madVR device state
   IDirect3DVertexShader9* m_pOldVS = nullptr;
   IDirect3DVertexBuffer9* m_pOldStreamData = nullptr;
   IDirect3DBaseTexture9* m_pOldTexture = nullptr;
@@ -75,6 +73,7 @@ private:
   DWORD m_D3DRS_SRCBLEND = 0;
   DWORD m_D3DRS_DESTBLEND = 0;
 
+  // stored kodi device state
   DWORD m_KODI_D3DRS_SEPARATEALPHABLENDENABLE = 0;
   DWORD m_KODI_D3DRS_SRCBLENDALPHA = 0;
   DWORD m_KODI_D3DRS_DESTBLENDALPHA = 0;

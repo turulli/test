@@ -45,37 +45,42 @@ CMadvrSharedRender::CMadvrSharedRender()
 
 CMadvrSharedRender::~CMadvrSharedRender()
 {
-  m_pMadvrVertexBuffer = nullptr;
-  m_pMadvrUnderTexture = nullptr;
-  m_pKodiUnderTexture = nullptr;
-  m_pMadvrOverTexture = nullptr;
-  m_pKodiOverTexture = nullptr;
+  SAFE_RELEASE(m_pMadvrVertexBuffer);
+  SAFE_RELEASE(m_pMadvrUnderTexture);
+  SAFE_RELEASE(m_pKodiUnderTexture);
+  SAFE_RELEASE(m_pMadvrOverTexture);
+  SAFE_RELEASE(m_pKodiOverTexture);
+}
+
+HRESULT CMadvrSharedRender::CreateSharedResource(IDirect3DTexture9** ppTextureMadvr, IDirect3DTexture9** ppTextureKodi)
+{
+  HRESULT hr;
+  HANDLE pSharedHandle = nullptr;
+
+  if (FAILED(hr = m_pD3DDeviceMadVR->CreateTexture(m_dwWidth, m_dwHeight, 0, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, ppTextureMadvr, &pSharedHandle)))
+    return hr;
+
+  if (FAILED(hr = m_pD3DDeviceKodi->CreateTexture(m_dwWidth, m_dwHeight, 0, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, ppTextureKodi, &pSharedHandle)))
+    return hr;
+
+  return hr;
 }
 
 HRESULT CMadvrSharedRender::CreateTextures(IDirect3DDevice9Ex* pD3DDeviceKodi, IDirect3DDevice9Ex* pD3DDeviceMadVR, int width, int height)
 {
-  // Create Shared Texture
+  HRESULT hr;
   m_pD3DDeviceKodi = pD3DDeviceKodi;
   m_pD3DDeviceMadVR = pD3DDeviceMadVR;
+  m_dwWidth = width;
+  m_dwHeight = height;
 
-  HRESULT hr;
-
+  // Create vertex buffer
   if (FAILED(hr = m_pD3DDeviceMadVR->CreateVertexBuffer(sizeof(VID_FRAME_VERTEX) * 4, D3DUSAGE_WRITEONLY, D3DFVF_VID_FRAME_VERTEX, D3DPOOL_DEFAULT, &m_pMadvrVertexBuffer, NULL)))
     CLog::Log(LOGDEBUG, "%s Failed to create madVR vertex buffer", __FUNCTION__);
 
-  //Under Textures
-  if (FAILED(hr = m_pD3DDeviceKodi->CreateTexture(width, height, 0, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_pKodiUnderTexture, &m_pSharedUnderHandle)))
-    CLog::Log(LOGDEBUG, "%s Failed to create kodi shared texture", __FUNCTION__);
-
-  if (FAILED(hr = m_pD3DDeviceMadVR->CreateTexture(width, height, 0, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_pMadvrUnderTexture, &m_pSharedUnderHandle)))
-    CLog::Log(LOGDEBUG, "%s Failed to create madVR shared texture", __FUNCTION__);
-
-  //Over Textures
-  if (FAILED(hr = m_pD3DDeviceKodi->CreateTexture(width, height, 0, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_pKodiOverTexture, &m_pSharedOverHandle)))
-    CLog::Log(LOGDEBUG, "%s Failed to create kodi shared texture", __FUNCTION__);
-
-  if (FAILED(hr = m_pD3DDeviceMadVR->CreateTexture(width, height, 0, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_pMadvrOverTexture, &m_pSharedOverHandle)))
-    CLog::Log(LOGDEBUG, "%s Failed to create madVR shared texture", __FUNCTION__);
+  // Create over texture
+  if (FAILED(hr = CreateSharedResource(&m_pMadvrOverTexture, &m_pKodiOverTexture)))
+    CLog::Log(LOGDEBUG, "%s Failed to create over shared texture", __FUNCTION__);
 
   return hr;
 }
@@ -96,6 +101,12 @@ HRESULT CMadvrSharedRender::RenderMadvr(MADVR_RENDER_LAYER layer, int width, int
   // if the context it's kodi menu manage the layer
   if (!g_graphicsContext.IsFullScreenVideo())
   {
+    if (layer == RENDER_LAYER_UNDER && !m_pMadvrUnderTexture)
+    {  
+      // Create under texture
+      if (FAILED(hr = CreateSharedResource(&m_pMadvrUnderTexture, &m_pKodiUnderTexture)))
+        CLog::Log(LOGDEBUG, "%s Failed to create under shared texture", __FUNCTION__);
+    }
     if (layer == RENDER_LAYER_OVER && !CMadvrCallback::Get()->IsVideoLayer())
     {
       // re-check if there is a videolayer before render over
@@ -112,20 +123,34 @@ HRESULT CMadvrSharedRender::RenderMadvr(MADVR_RENDER_LAYER layer, int width, int
     CMadvrCallback::Get()->SetRenderLayer(layer);
   }
 
+  // Begin render Kodi Gui
+  m_pD3DDeviceKodi->BeginScene();
+
+  // Render to Shared texture Surface
+  RenderToTexture(layer);
+
+  // Call the render from madVR thread
+  (layer == RENDER_LAYER_UNDER) ? g_windowManager.Render() : g_application.RenderNoPresent();
+
+  // End Render Kodi Gui
+  m_pD3DDeviceKodi->EndScene();
+
+  // Present the frame from madVR thread
+  CDirtyRegionList dirtyRegions = g_windowManager.GetDirty();
+  g_graphicsContext.Flip(dirtyRegions);
+
+  // Pull the trigger on Applicaiton.Render() FrameWait();
+  g_renderManager.NewFrame();
+
+  // Return without render in madVR if the Kodi Gui isn't visible
+  if (!CMadvrCallback::Get()->IsGuiActive())
+    return hr;
+
   // Store madVR States
   if (FAILED(StoreMadDeviceState()))
     return hr;
 
-  // Render Kodi Gui
-  RenderToTexture(layer);
-  m_pD3DDeviceKodi->BeginScene();
-
-  (layer == RENDER_LAYER_UNDER) ? g_windowManager.Render() : g_application.RenderNoPresent();
-  g_renderManager.NewFrame();
-  m_pD3DDeviceKodi->EndScene();
-  m_pD3DDeviceKodi->Present(NULL, NULL, NULL, NULL);
-
-  //Setup madVR Device
+  // Setup madVR Device
   if (FAILED(SetupMadDeviceState()))
     return hr;
 
@@ -133,7 +158,7 @@ HRESULT CMadvrSharedRender::RenderMadvr(MADVR_RENDER_LAYER layer, int width, int
   if (FAILED(SetupVertex()))
     return hr;
 
-  // Draw Kodi shared texture on madVR
+  // Draw Kodi shared texture on madVR D3D9 device
   if (FAILED(RenderTexture(layer)))
     return hr;
 
@@ -141,8 +166,8 @@ HRESULT CMadvrSharedRender::RenderMadvr(MADVR_RENDER_LAYER layer, int width, int
   if (FAILED(RestoreMadDeviceState()))
     return hr;
 
-  // return an hresult for madVR renderOSD latency mode
-  return CMadvrCallback::Get()->IsGuiActive() ? CALLBACK_USER_INTERFACE : CALLBACK_INFO_DISPLAY;
+  // Return to madVR that we rendered something
+  return CALLBACK_USER_INTERFACE;
 }
 
 HRESULT CMadvrSharedRender::RenderToTexture(MADVR_RENDER_LAYER layer)
@@ -291,6 +316,8 @@ HRESULT CMadvrSharedRender::StoreMadDeviceState()
 
   if (FAILED(hr = m_pD3DDeviceMadVR->GetPixelShader(&m_pPix)))
     return hr;
+
+  return hr;
 }
 
 HRESULT CMadvrSharedRender::SetupKodiDeviceState()
