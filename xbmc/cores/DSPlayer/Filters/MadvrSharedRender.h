@@ -31,13 +31,17 @@ public:
 
   HRESULT CreateTextures(IDirect3DDevice9Ex* pD3DDeviceKodi, IDirect3DDevice9Ex* pD3DDeviceMadVR, int width, int height);
   HRESULT RenderMadvr(MADVR_RENDER_LAYER layer, int width, int height);
-  HRESULT CreateSharedResource(IDirect3DTexture9** ppTextureMadvr, IDirect3DTexture9** ppTextureKodi);
+  HRESULT RenderToTexture(MADVR_RENDER_LAYER layer);
   HRESULT StoreKodiDeviceState();
   HRESULT SetupKodiDeviceState();
   HRESULT RestoreKodiDeviceState();
   
 private:
-  HRESULT RenderToTexture(MADVR_RENDER_LAYER layer);
+  HRESULT CreateSharedResource(IDirect3DTexture9** ppTextureMadvr, IDirect3DTexture9** ppTextureKodi);
+  HRESULT RenderUnder();
+  HRESULT RenderOver();
+  void RenderKodi(MADVR_RENDER_LAYER layer);
+  HRESULT RenderMadvrInternal(MADVR_RENDER_LAYER layer);
   HRESULT RenderTexture(MADVR_RENDER_LAYER layer);
   HRESULT SetupVertex();
   HRESULT StoreMadDeviceState();
@@ -55,6 +59,8 @@ private:
 
   DWORD m_dwWidth = 0;
   DWORD m_dwHeight = 0;
+
+  bool bUnderRender;
 
   // stored madVR device state
   IDirect3DVertexShader9* m_pOldVS = nullptr;

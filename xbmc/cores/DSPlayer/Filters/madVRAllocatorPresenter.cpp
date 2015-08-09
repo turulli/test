@@ -200,10 +200,7 @@ bool CmadVRAllocatorPresenter::IsCurrentThreadId()
 
 STDMETHODIMP CmadVRAllocatorPresenter::ClearBackground(LPCSTR name, REFERENCE_TIME frameStart, RECT *fullOutputRect, RECT *activeVideoRect)
 {
-  if (!g_graphicsContext.IsFullScreenVideo())
-    return m_pMadvrShared->RenderMadvr(RENDER_LAYER_UNDER, fullOutputRect->right - fullOutputRect->left, fullOutputRect->bottom - fullOutputRect->top);
-  else
-    return CALLBACK_INFO_DISPLAY;
+  return m_pMadvrShared->RenderMadvr(RENDER_LAYER_UNDER, fullOutputRect->right - fullOutputRect->left, fullOutputRect->bottom - fullOutputRect->top);
 }
 
 STDMETHODIMP CmadVRAllocatorPresenter::RenderOsd(LPCSTR name, REFERENCE_TIME frameStart, RECT *fullOutputRect, RECT *activeVideoRect)

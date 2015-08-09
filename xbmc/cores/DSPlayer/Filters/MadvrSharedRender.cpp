@@ -41,6 +41,7 @@ struct VID_FRAME_VERTEX
 
 CMadvrSharedRender::CMadvrSharedRender()
 {
+  bUnderRender = false;
 }
 
 CMadvrSharedRender::~CMadvrSharedRender()
@@ -87,41 +88,76 @@ HRESULT CMadvrSharedRender::CreateTextures(IDirect3DDevice9Ex* pD3DDeviceKodi, I
 
 HRESULT CMadvrSharedRender::RenderMadvr(MADVR_RENDER_LAYER layer, int width, int height)
 {
-  HRESULT hr = CALLBACK_INFO_DISPLAY;
-
   if (!CMadvrCallback::Get()->GetRenderOnMadvr())
-    return hr;
-
-  // Reset render count to notice when the GUI it's active or deactive
-  CMadvrCallback::Get()->ResetRenderCount();
+    return CALLBACK_INFO_DISPLAY;
 
   m_dwWidth = width;
   m_dwHeight = height;
 
-  // if the context it's kodi menu manage the layer
-  if (!g_graphicsContext.IsFullScreenVideo())
-  {
-    if (layer == RENDER_LAYER_UNDER && !m_pMadvrUnderTexture)
-    {  
-      // Create under texture
-      if (FAILED(hr = CreateSharedResource(&m_pMadvrUnderTexture, &m_pKodiUnderTexture)))
-        CLog::Log(LOGDEBUG, "%s Failed to create under shared texture", __FUNCTION__);
-    }
-    if (layer == RENDER_LAYER_OVER && !CMadvrCallback::Get()->IsVideoLayer())
-    {
-      // re-check if there is a videolayer before render over
-      CMadvrCallback::Get()->SetRenderLayer(RENDER_LAYER_CHECK);
-      g_windowManager.Render();
+  return (layer == RENDER_LAYER_UNDER) ? RenderUnder() : RenderOver();
+}
 
-      // if there is not a video layer render all over the video
-      if (!CMadvrCallback::Get()->IsVideoLayer())
-        layer = RENDER_LAYER_ALL;
-    }
+HRESULT CMadvrSharedRender::RenderUnder()
+{
+  HRESULT hr = CALLBACK_INFO_DISPLAY;
 
-    //set initial render variables
-    CMadvrCallback::Get()->SetVideoLayer(false);
-    CMadvrCallback::Get()->SetRenderLayer(layer);
+  if (g_graphicsContext.IsFullScreenVideo())
+    return hr;
+
+  // Create under texture only when needed
+  if (!m_pMadvrUnderTexture)
+  {  
+    if (FAILED(hr = CreateSharedResource(&m_pMadvrUnderTexture, &m_pKodiUnderTexture)))
+      CLog::Log(LOGDEBUG, "%s Failed to create under shared texture", __FUNCTION__);
   }
+
+  // Set initial render value
+  bUnderRender = true;
+
+  // Kodi Render
+  RenderKodi(RENDER_LAYER_UNDER);
+
+  // If the Kodi GUI isn't visible or the Over layer it's empty don't render on madVR
+  if (!CMadvrCallback::Get()->IsGuiActive() || !CMadvrCallback::Get()->IsOverGuiActive())
+    return hr;
+
+  // Render the GUI on madVR
+  if (FAILED(RenderMadvrInternal(RENDER_LAYER_UNDER)))
+    return hr;
+
+  // Return to madVR that we rendered something
+  return CALLBACK_USER_INTERFACE;
+}
+
+HRESULT CMadvrSharedRender::RenderOver()
+{
+  HRESULT hr = CALLBACK_INFO_DISPLAY;
+
+  // Kodi Render
+  if (!bUnderRender)
+    RenderKodi(RENDER_LAYER_OVER);
+
+  // Reset render value
+  bUnderRender = false;
+
+  // If the Kodi GUI isn't visible don't render on madVR
+  if (!CMadvrCallback::Get()->IsGuiActive())
+    return hr;
+
+  // Render the GUI on madVR, if nothing it's drawn on over layer render the under layer
+  MADVR_RENDER_LAYER layer;
+  CMadvrCallback::Get()->IsOverGuiActive() ? layer = RENDER_LAYER_OVER : layer = RENDER_LAYER_UNDER;
+  if (FAILED(RenderMadvrInternal(layer)))
+    return hr;
+
+  // Return to madVR that we rendered something
+  return CALLBACK_USER_INTERFACE;
+}
+
+void CMadvrSharedRender::RenderKodi(MADVR_RENDER_LAYER layer)
+{
+  // Reset render count to notice when the GUI it's active or deactive
+  CMadvrCallback::Get()->ResetRenderCount();
 
   // Begin render Kodi Gui
   m_pD3DDeviceKodi->BeginScene();
@@ -130,7 +166,7 @@ HRESULT CMadvrSharedRender::RenderMadvr(MADVR_RENDER_LAYER layer, int width, int
   RenderToTexture(layer);
 
   // Call the render from madVR thread
-  (layer == RENDER_LAYER_UNDER) ? g_windowManager.Render() : g_application.RenderNoPresent();
+  g_application.RenderNoPresent();
 
   // End Render Kodi Gui
   m_pD3DDeviceKodi->EndScene();
@@ -141,33 +177,33 @@ HRESULT CMadvrSharedRender::RenderMadvr(MADVR_RENDER_LAYER layer, int width, int
 
   // Pull the trigger on Applicaiton.Render() FrameWait();
   g_renderManager.NewFrame();
+}
 
-  // Return without render in madVR if the Kodi Gui isn't visible
-  if (!CMadvrCallback::Get()->IsGuiActive())
-    return hr;
+HRESULT CMadvrSharedRender::RenderMadvrInternal(MADVR_RENDER_LAYER layer)
+{
+  HRESULT hr = E_UNEXPECTED;
 
   // Store madVR States
-  if (FAILED(StoreMadDeviceState()))
+  if (FAILED(hr = StoreMadDeviceState()))
     return hr;
 
   // Setup madVR Device
-  if (FAILED(SetupMadDeviceState()))
+  if (FAILED(hr = SetupMadDeviceState()))
     return hr;
 
   // Setup Vertex Buffer
-  if (FAILED(SetupVertex()))
+  if (FAILED(hr = SetupVertex()))
     return hr;
 
   // Draw Kodi shared texture on madVR D3D9 device
-  if (FAILED(RenderTexture(layer)))
+  if (FAILED(hr = RenderTexture(layer)))
     return hr;
 
   // Restore madVR states
-  if (FAILED(RestoreMadDeviceState()))
+  if (FAILED(hr = RestoreMadDeviceState()))
     return hr;
 
-  // Return to madVR that we rendered something
-  return CALLBACK_USER_INTERFACE;
+  return hr;
 }
 
 HRESULT CMadvrSharedRender::RenderToTexture(MADVR_RENDER_LAYER layer)
@@ -177,6 +213,8 @@ HRESULT CMadvrSharedRender::RenderToTexture(MADVR_RENDER_LAYER layer)
   Com::SmartPtr<IDirect3DTexture9> pTexture;
   Com::SmartPtr<IDirect3DSurface9> pSurface;
   layer == RENDER_LAYER_UNDER ? pTexture = m_pKodiUnderTexture : pTexture = m_pKodiOverTexture;
+
+  CMadvrCallback::Get()->SetCurrentVideoLayer(layer);
 
   if (FAILED(hr = pTexture->GetSurfaceLevel(0, &pSurface)))
     return hr;
