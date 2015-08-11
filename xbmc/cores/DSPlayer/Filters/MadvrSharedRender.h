@@ -30,18 +30,16 @@ public:
   virtual ~CMadvrSharedRender();
 
   HRESULT CreateTextures(IDirect3DDevice9Ex* pD3DDeviceKodi, IDirect3DDevice9Ex* pD3DDeviceMadVR, int width, int height);
-  HRESULT RenderMadvr(MADVR_RENDER_LAYER layer, int width, int height);
+  HRESULT Render(MADVR_RENDER_LAYER layer, int width, int height);
   HRESULT RenderToTexture(MADVR_RENDER_LAYER layer);
   HRESULT StoreKodiDeviceState();
   HRESULT SetupKodiDeviceState();
   HRESULT RestoreKodiDeviceState();
   
 private:
-  HRESULT CreateSharedResource(IDirect3DTexture9** ppTextureMadvr, IDirect3DTexture9** ppTextureKodi);
-  HRESULT RenderUnder();
-  HRESULT RenderOver();
+  HRESULT CreateSharedResource(IDirect3DTexture9** ppTextureMadvr, IDirect3DTexture9** ppTextureKodi, IDirect3DSurface9** ppSurfaceKodi);
+  HRESULT RenderMadvr(MADVR_RENDER_LAYER layer);
   void RenderKodi(MADVR_RENDER_LAYER layer);
-  HRESULT RenderMadvrInternal(MADVR_RENDER_LAYER layer);
   HRESULT RenderTexture(MADVR_RENDER_LAYER layer);
   HRESULT SetupVertex();
   HRESULT StoreMadDeviceState();
@@ -52,11 +50,15 @@ private:
   IDirect3DTexture9* m_pKodiOverTexture = nullptr;
   IDirect3DTexture9* m_pMadvrUnderTexture = nullptr;
   IDirect3DTexture9* m_pMadvrOverTexture = nullptr;
+  IDirect3DSurface9* m_pKodiUnderSurface = nullptr;
+  IDirect3DSurface9* m_pKodiOverSurface = nullptr;
   IDirect3DVertexBuffer9* m_pMadvrVertexBuffer = nullptr;
 
   IDirect3DDevice9Ex* m_pD3DDeviceKodi = nullptr;
   IDirect3DDevice9Ex* m_pD3DDeviceMadVR = nullptr;
 
+  DWORD m_dwTextureWidth = 0;
+  DWORD m_dwTextureHeight = 0;
   DWORD m_dwWidth = 0;
   DWORD m_dwHeight = 0;
 
