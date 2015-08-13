@@ -1849,11 +1849,6 @@ bool CApplication::RenderNoPresent()
 {
   MEASURE_FUNCTION;
 
-#ifdef HAS_DS_PLAYER
-  if (CMadvrCallback::Get()->ReadyMadvr() && !CMadvrCallback::Get()->GetCallback()->IsCurrentThreadId())
-    return false;
-#endif
-
 // DXMERGE: This may have been important?
 //  g_graphicsContext.AcquireCurrentContext();
 
@@ -1978,12 +1973,12 @@ void CApplication::Render()
   if (m_bPresentFrame && m_pPlayer->IsPlaying() && !m_pPlayer->IsPaused())
     ResetScreenSaver();
 
-#ifdef HAS_DS_PLAYER
-  if (!CMadvrCallback::Get()->ReadyMadvr())
-#endif
   if(!g_Windowing.BeginRender())
     return;
-
+#ifdef HAS_DS_PLAYER
+  if (CMadvrCallback::Get()->ReadyMadvr())
+    CMadvrCallback::Get()->GetCallback()->RenderToTexture(RENDER_LAYER_UNDER);
+#endif
   CDirtyRegionList dirtyRegions;
 
   // render gui layer
@@ -2016,9 +2011,6 @@ void CApplication::Render()
   // render video layer
   g_windowManager.RenderEx();
 
-#ifdef HAS_DS_PLAYER
-  if (!CMadvrCallback::Get()->ReadyMadvr())
-#endif
   g_Windowing.EndRender();
 
   // reset our info cache - we do this at the end of Render so that it is
@@ -2054,16 +2046,17 @@ void CApplication::Render()
     if (frameTime < singleFrameTime)
       Sleep(singleFrameTime - frameTime);
   }
+    if (flip)
+      g_graphicsContext.Flip(dirtyRegions);
 
-#ifdef HAS_DS_PLAYER
-  if (!CMadvrCallback::Get()->ReadyMadvr())
+#ifdef HAS_DS_PLAYER    
+    if (CMadvrCallback::Get()->ReadyMadvr())
+      CMadvrCallback::Get()->GetCallback()->Flush();
+    else
 #endif
-  if (flip)
-    g_graphicsContext.Flip(dirtyRegions);
-
   if (!extPlayerActive && g_graphicsContext.IsFullScreenVideo() && !m_pPlayer->IsPausedPlayback())
   {
-    g_renderManager.FrameWait(100);
+      g_renderManager.FrameWait(100);
   }
 
   m_lastFrameTime = XbmcThreads::SystemClockMillis();

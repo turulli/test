@@ -22,6 +22,21 @@
  */
 
 #include "MadvrCallback.h"
+#include "SurfaceQueueLib/SurfaceQueue.h"
+
+class CMetaData
+{
+public:
+  CMetaData()
+  {
+    bGuiVisible = false;
+    bGuiVisibleOver = false;
+  };
+  virtual ~CMetaData(){};
+
+  bool bGuiVisible;
+  bool bGuiVisibleOver;
+};
 
 class CMadvrSharedRender
 {
@@ -32,37 +47,49 @@ public:
   HRESULT CreateTextures(IDirect3DDevice9Ex* pD3DDeviceKodi, IDirect3DDevice9Ex* pD3DDeviceMadVR, int width, int height);
   HRESULT Render(MADVR_RENDER_LAYER layer, int width, int height);
   HRESULT RenderToTexture(MADVR_RENDER_LAYER layer);
+  void Flush();
   HRESULT StoreKodiDeviceState();
   HRESULT SetupKodiDeviceState();
   HRESULT RestoreKodiDeviceState();
   
 private:
   HRESULT CreateSharedResource(IDirect3DTexture9** ppTextureMadvr, IDirect3DTexture9** ppTextureKodi, IDirect3DSurface9** ppSurfaceKodi);
+  HRESULT CreateSharedQueueResource();
+  void DeQueue(MADVR_RENDER_LAYER layer);
   HRESULT RenderMadvr(MADVR_RENDER_LAYER layer);
-  void RenderKodi(MADVR_RENDER_LAYER layer);
   HRESULT RenderTexture(MADVR_RENDER_LAYER layer);
   HRESULT SetupVertex();
   HRESULT StoreMadDeviceState();
   HRESULT SetupMadDeviceState();
   HRESULT RestoreMadDeviceState();
 
-  IDirect3DTexture9* m_pKodiUnderTexture = nullptr;
-  IDirect3DTexture9* m_pKodiOverTexture = nullptr;
-  IDirect3DTexture9* m_pMadvrUnderTexture = nullptr;
-  IDirect3DTexture9* m_pMadvrOverTexture = nullptr;
-  IDirect3DSurface9* m_pKodiUnderSurface = nullptr;
-  IDirect3DSurface9* m_pKodiOverSurface = nullptr;
-  IDirect3DVertexBuffer9* m_pMadvrVertexBuffer = nullptr;
+  IDirect3DDevice9Ex*       m_pD3DDeviceKodi = nullptr;
+  IDirect3DDevice9Ex*       m_pD3DDeviceMadVR = nullptr;
 
-  IDirect3DDevice9Ex* m_pD3DDeviceKodi = nullptr;
-  IDirect3DDevice9Ex* m_pD3DDeviceMadVR = nullptr;
+  IDirect3DVertexBuffer9*   m_pMadvrVertexBuffer = nullptr;
+  IDirect3DTexture9*        m_pKodiOverTexture = nullptr;
+  IDirect3DSurface9*        m_pKodiOverSurface = nullptr;
+  IDirect3DTexture9*        m_pMadvrOverTexture = nullptr;
+
+  IDirect3DTexture9*        m_pKodiUnderTexture = nullptr;
+  IDirect3DSurface9*        m_pKodiUnderSurface = nullptr;
+  IDirect3DTexture9*        m_pMadvrUnderTexture = nullptr;
+
+  ISurfaceQueue*            m_pKodiQueue = nullptr;
+  ISurfaceQueue*            m_pMadvrQueue = nullptr;
+  ISurfaceProducer*         m_pKodiProducer = nullptr;
+  ISurfaceConsumer*         m_pKodiConsumer = nullptr;
+  ISurfaceProducer*         m_pMadvrProducer = nullptr;
+  ISurfaceConsumer*         m_pMadvrConsumer = nullptr;
 
   DWORD m_dwTextureWidth = 0;
   DWORD m_dwTextureHeight = 0;
   DWORD m_dwWidth = 0;
   DWORD m_dwHeight = 0;
 
-  bool bUnderRender;
+  bool m_bUnderRender;
+  bool m_bGuiVisible;
+  bool m_bGuiVisibleOver;
 
   // stored madVR device state
   IDirect3DVertexShader9* m_pOldVS = nullptr;
