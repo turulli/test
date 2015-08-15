@@ -197,7 +197,7 @@ HRESULT CMadvrSharedRender::RenderMadvr(MADVR_RENDER_LAYER layer)
   HRESULT hr = E_UNEXPECTED;
 
   // If the over layer it's empty skip the rendering of the under layer and drawn everything over madVR
-  if (layer == RENDER_LAYER_UNDER && !CMadvrCallback::Get()->GuiVisible(RENDER_LAYER_OVER))
+  if (layer == RENDER_LAYER_UNDER && !m_bGuiVisibleOver)
     return hr;
 
   if (layer == RENDER_LAYER_OVER)
