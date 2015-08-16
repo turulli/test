@@ -839,10 +839,14 @@ void CGUIFontTTFBase::RenderCharacter(float posX, float posY, const Character *c
     float rx3 = (float)MathUtils::round_int(x[3]);
     x[1] = (float)MathUtils::truncate_int(x[1]);
     x[2] = (float)MathUtils::truncate_int(x[2]);
-    if (rx0 > x[0])
+    if (x[0] > 0.0f && rx0 > x[0])
       x[1] += 1;
-    if (rx3 > x[3])
+    else if (x[0] < 0.0f && rx0 < x[0])
+      x[1] -= 1;
+    if (x[3] > 0.0f && rx3 > x[3])
       x[2] += 1;
+    else if (x[3] < 0.0f && rx3 < x[3])
+      x[2] -= 1;
     x[0] = rx0;
     x[3] = rx3;
   }
@@ -881,10 +885,14 @@ void CGUIFontTTFBase::RenderCharacter(float posX, float posY, const Character *c
 
   for(int i = 0; i < 4; i++)
   {
+#ifdef HAS_DX
+    CD3DHelper::XMStoreColor(&v[i].col, a, r, g, b);
+#else
     v[i].r = r;
     v[i].g = g;
     v[i].b = b;
     v[i].a = a;
+#endif
   }
 
 #if defined(HAS_GL) || defined(HAS_DX)
