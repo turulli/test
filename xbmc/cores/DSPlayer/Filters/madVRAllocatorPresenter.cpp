@@ -91,7 +91,6 @@ CmadVRAllocatorPresenter::~CmadVRAllocatorPresenter()
 
   g_renderManager.UnInit();
   g_advancedSettings.m_guiAlgorithmDirtyRegions = m_kodiGuiDirtyAlgo;
-  m_pMadvrShared->RestoreKodiDeviceState();
   
   // the order is important here
   CMadvrCallback::Destroy();
@@ -213,12 +212,12 @@ bool CmadVRAllocatorPresenter::IsCurrentThreadId()
 
 STDMETHODIMP CmadVRAllocatorPresenter::ClearBackground(LPCSTR name, REFERENCE_TIME frameStart, RECT *fullOutputRect, RECT *activeVideoRect)
 {
-  return m_pMadvrShared->Render(RENDER_LAYER_UNDER, fullOutputRect->right - fullOutputRect->left, fullOutputRect->bottom - fullOutputRect->top);
+  return m_pMadvrShared->Render(RENDER_LAYER_UNDER);
 }
 
 STDMETHODIMP CmadVRAllocatorPresenter::RenderOsd(LPCSTR name, REFERENCE_TIME frameStart, RECT *fullOutputRect, RECT *activeVideoRect)
 {
-  return m_pMadvrShared->Render(RENDER_LAYER_OVER, fullOutputRect->right - fullOutputRect->left, fullOutputRect->bottom - fullOutputRect->top);
+  return m_pMadvrShared->Render(RENDER_LAYER_OVER);
 }
 
 STDMETHODIMP CmadVRAllocatorPresenter::SetDeviceOsd(IDirect3DDevice9* pD3DDev)
@@ -246,13 +245,11 @@ HRESULT CmadVRAllocatorPresenter::SetDevice(IDirect3DDevice9* pD3DDev)
 
   if (m_firstBoot)
   { 
-    m_pMadvrShared->CreateTextures((IDirect3DDevice9Ex*)g_Windowing.Get3DDevice(), (IDirect3DDevice9Ex*)pD3DDev, (int)m_ScreenSize.cx, (int)m_ScreenSize.cy);
+    m_pMadvrShared->CreateTextures(g_Windowing.Get3D11Device(), (IDirect3DDevice9Ex*)pD3DDev, (int)m_ScreenSize.cx, (int)m_ScreenSize.cy);
 
     m_firstBoot = false;
     m_threadID = CThread::GetCurrentThreadId();
     g_advancedSettings.m_guiAlgorithmDirtyRegions = DIRTYREGION_SOLVER_FILL_VIEWPORT_ALWAYS;
-    m_pMadvrShared->StoreKodiDeviceState();
-    m_pMadvrShared->SetupKodiDeviceState();
   }
 
   Com::SmartSize size;

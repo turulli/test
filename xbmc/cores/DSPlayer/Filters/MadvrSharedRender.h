@@ -26,11 +26,11 @@
 
 class CMetaData
 {
-public:
-  CMetaData()
-  {
+public:  
+  CMetaData() 
+  { 
     bGuiVisible = false;
-    bGuiVisibleOver = false;
+    bGuiVisibleOver = false; 
   };
   virtual ~CMetaData(){};
 
@@ -44,49 +44,44 @@ public:
   CMadvrSharedRender();
   virtual ~CMadvrSharedRender();
 
-  HRESULT CreateTextures(IDirect3DDevice9Ex* pD3DDeviceKodi, IDirect3DDevice9Ex* pD3DDeviceMadVR, int width, int height);
-  HRESULT Render(MADVR_RENDER_LAYER layer, int width, int height);
+  HRESULT CreateTextures(ID3D11Device* pD3DDeviceKodi, IDirect3DDevice9Ex* pD3DDeviceMadVR, int width, int height);
+  HRESULT Render(MADVR_RENDER_LAYER layer);  
   HRESULT RenderToTexture(MADVR_RENDER_LAYER layer);
   void Flush();
-  HRESULT StoreKodiDeviceState();
-  HRESULT SetupKodiDeviceState();
-  HRESULT RestoreKodiDeviceState();
   
 private:
-  HRESULT CreateSharedResource(IDirect3DTexture9** ppTextureMadvr, IDirect3DTexture9** ppTextureKodi, IDirect3DSurface9** ppSurfaceKodi);
+  HRESULT CreateSharedResource(IDirect3DTexture9** ppTexture9, ID3D11Texture2D** ppTexture11, ID3D11RenderTargetView** ppSurface11);
   HRESULT CreateSharedQueueResource();
   void DeQueue(MADVR_RENDER_LAYER layer);
-  HRESULT RenderMadvr(MADVR_RENDER_LAYER layer);
+  HRESULT RenderMadvr(MADVR_RENDER_LAYER layer);  
   HRESULT RenderTexture(MADVR_RENDER_LAYER layer);
   HRESULT SetupVertex();
   HRESULT StoreMadDeviceState();
   HRESULT SetupMadDeviceState();
   HRESULT RestoreMadDeviceState();
 
-  IDirect3DDevice9Ex*       m_pD3DDeviceKodi = nullptr;
+  ID3D11Device*             m_pD3DDeviceKodi = nullptr;
   IDirect3DDevice9Ex*       m_pD3DDeviceMadVR = nullptr;
 
   IDirect3DVertexBuffer9*   m_pMadvrVertexBuffer = nullptr;
-  IDirect3DTexture9*        m_pKodiOverTexture = nullptr;
-  IDirect3DSurface9*        m_pKodiOverSurface = nullptr;
+  ID3D11Texture2D*          m_pKodiOverTexture = nullptr;
+  ID3D11RenderTargetView*   m_pKodiOverSurface = nullptr;
   IDirect3DTexture9*        m_pMadvrOverTexture = nullptr;
 
-  IDirect3DTexture9*        m_pKodiUnderTexture = nullptr;
-  IDirect3DSurface9*        m_pKodiUnderSurface = nullptr;
-  IDirect3DTexture9*        m_pMadvrUnderTexture = nullptr;
+  IDirect3DTexture9*        m_pUnderTexture9 = nullptr;
+  ID3D11Texture2D*          m_pUnderTexture11 = nullptr;
+  ID3D11RenderTargetView*   m_pUnderSurface11 = nullptr;
+  
+  ISurfaceQueue*            m_pD3D11Queue = nullptr;
+  ISurfaceQueue*            m_pD3D9Queue = nullptr;
+  ISurfaceProducer*         m_pD3D11Producer = nullptr;
+  ISurfaceConsumer*         m_pD3D11Consumer = nullptr;
+  ISurfaceProducer*         m_pD3D9Producer = nullptr;
+  ISurfaceConsumer*         m_pD3D9Consumer = nullptr;
 
-  ISurfaceQueue*            m_pKodiQueue = nullptr;
-  ISurfaceQueue*            m_pMadvrQueue = nullptr;
-  ISurfaceProducer*         m_pKodiProducer = nullptr;
-  ISurfaceConsumer*         m_pKodiConsumer = nullptr;
-  ISurfaceProducer*         m_pMadvrProducer = nullptr;
-  ISurfaceConsumer*         m_pMadvrConsumer = nullptr;
-
-  DWORD m_dwTextureWidth = 0;
-  DWORD m_dwTextureHeight = 0;
   DWORD m_dwWidth = 0;
   DWORD m_dwHeight = 0;
-
+  float m_fColor[4];
   bool m_bUnderRender;
   bool m_bGuiVisible;
   bool m_bGuiVisibleOver;
@@ -107,11 +102,6 @@ private:
   DWORD m_D3DRS_ALPHABLENDENABLE = 0;
   DWORD m_D3DRS_SRCBLEND = 0;
   DWORD m_D3DRS_DESTBLEND = 0;
-
-  // stored kodi device state
-  DWORD m_KODI_D3DRS_SEPARATEALPHABLENDENABLE = 0;
-  DWORD m_KODI_D3DRS_SRCBLENDALPHA = 0;
-  DWORD m_KODI_D3DRS_DESTBLENDALPHA = 0;
 
   IDirect3DPixelShader9* m_pPix = nullptr;
 };

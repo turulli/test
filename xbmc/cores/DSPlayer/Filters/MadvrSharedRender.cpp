@@ -25,7 +25,9 @@
 #include "Application.h"
 #include "Utils/Log.h"
 #include "guilib/GUIWindowManager.h"
+#include "windowing/WindowingFactory.h"
 #include "cores/VideoRenderers/RenderManager.h"
+#include "settings/AdvancedSettings.h"
 
 const DWORD D3DFVF_VID_FRAME_VERTEX = D3DFVF_XYZRHW | D3DFVF_TEX1;
 
@@ -41,6 +43,8 @@ struct VID_FRAME_VERTEX
 
 CMadvrSharedRender::CMadvrSharedRender()
 {
+  color_t clearColour = (g_advancedSettings.m_videoBlackBarColour & 0xff) * 0x010101;
+  CD3DHelper::XMStoreColor(m_fColor, clearColour);
   m_bUnderRender = false;
   m_bGuiVisible = false;
   m_bGuiVisibleOver = false;
@@ -53,31 +57,31 @@ CMadvrSharedRender::~CMadvrSharedRender()
   SAFE_RELEASE(m_pKodiOverSurface);
   SAFE_RELEASE(m_pKodiOverTexture);
 
-  SAFE_RELEASE(m_pMadvrUnderTexture);
-  SAFE_RELEASE(m_pKodiUnderSurface);
-  SAFE_RELEASE(m_pKodiUnderTexture);
-
-  SAFE_RELEASE(m_pKodiQueue);
-  SAFE_RELEASE(m_pMadvrQueue);
-  SAFE_RELEASE(m_pKodiProducer);
-  SAFE_RELEASE(m_pKodiConsumer);
-  SAFE_RELEASE(m_pMadvrProducer);
-  SAFE_RELEASE(m_pMadvrConsumer);
+  SAFE_RELEASE(m_pUnderTexture9);
+  SAFE_RELEASE(m_pUnderSurface11);
+  SAFE_RELEASE(m_pUnderTexture11);
+  
+  SAFE_RELEASE(m_pD3D11Queue);
+  SAFE_RELEASE(m_pD3D9Queue);
+  SAFE_RELEASE(m_pD3D11Producer);
+  SAFE_RELEASE(m_pD3D11Consumer);
+  SAFE_RELEASE(m_pD3D9Producer);
+  SAFE_RELEASE(m_pD3D9Consumer);
 }
 
-HRESULT CMadvrSharedRender::CreateSharedResource(IDirect3DTexture9** ppTextureMadvr, IDirect3DTexture9** ppTextureKodi, IDirect3DSurface9** ppSurfaceKodi)
+HRESULT CMadvrSharedRender::CreateSharedResource(IDirect3DTexture9** ppTexture9, ID3D11Texture2D** ppTexture11, ID3D11RenderTargetView** ppSurface11)
 {
   HRESULT hr;
   HANDLE pSharedHandle = nullptr;
+  CD3D11_RENDER_TARGET_VIEW_DESC rtDesc(D3D11_RTV_DIMENSION_TEXTURE2D);
 
-  if (FAILED(hr = m_pD3DDeviceMadVR->CreateTexture(m_dwTextureWidth, m_dwTextureHeight, 0, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, ppTextureMadvr, &pSharedHandle)))
+  if (FAILED(hr = m_pD3DDeviceMadVR->CreateTexture(m_dwWidth, m_dwHeight, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, ppTexture9, &pSharedHandle)))
     return hr;
 
-  if (FAILED(hr = m_pD3DDeviceKodi->CreateTexture(m_dwTextureWidth, m_dwTextureHeight, 0, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, ppTextureKodi, &pSharedHandle)))
+  if (FAILED(hr = m_pD3DDeviceKodi->OpenSharedResource(pSharedHandle, __uuidof(ID3D11Texture2D), (void**)(ppTexture11))))
     return hr;
 
-  IDirect3DTexture9* pTexture = *ppTextureKodi;
-  if (FAILED(hr = pTexture->GetSurfaceLevel(0, ppSurfaceKodi)))
+  if (FAILED(hr = m_pD3DDeviceKodi->CreateRenderTargetView(*ppTexture11, &rtDesc, ppSurface11)))
     return hr;
 
   return hr;
@@ -89,69 +93,66 @@ HRESULT CMadvrSharedRender::CreateSharedQueueResource()
 
   // Initialize the surface queues
   SURFACE_QUEUE_DESC  desc;
-  desc.Width = m_dwTextureWidth;
-  desc.Height = m_dwTextureHeight;
+  desc.Width = m_dwWidth;
+  desc.Height = m_dwHeight;
   desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
   desc.NumSurfaces = 1;
   desc.MetaDataSize = sizeof(UINT);
   desc.Flags = 0;
 
-  if (FAILED(hr = CreateSurfaceQueue(&desc, m_pD3DDeviceMadVR, &m_pKodiQueue)))
+  if (FAILED(hr = CreateSurfaceQueue(&desc, m_pD3DDeviceMadVR, &m_pD3D11Queue)))
     return hr;
 
   // Clone the queue
   SURFACE_QUEUE_CLONE_DESC cloneDesc;
   cloneDesc.MetaDataSize = 0;
   cloneDesc.Flags = 0;
-  if (FAILED(hr = m_pKodiQueue->Clone(&cloneDesc, &m_pMadvrQueue)))
+  if (FAILED(hr = m_pD3D11Queue->Clone(&cloneDesc, &m_pD3D9Queue)))
     return hr;
 
   // Open for m_pD3D9Queue
-  if (FAILED(hr = m_pMadvrQueue->OpenProducer(m_pD3DDeviceMadVR, &m_pMadvrProducer)))
+  if (FAILED(hr = m_pD3D9Queue->OpenProducer(m_pD3DDeviceMadVR, &m_pD3D9Producer)))
     return hr;
-  if (FAILED(hr = m_pMadvrQueue->OpenConsumer(m_pD3DDeviceKodi, &m_pKodiConsumer)))
+  if (FAILED(hr = m_pD3D9Queue->OpenConsumer(m_pD3DDeviceKodi, &m_pD3D11Consumer)))
     return hr;
 
   // Open for m_pD3D11Queue
-  if (FAILED(hr = m_pKodiQueue->OpenProducer(m_pD3DDeviceKodi, &m_pKodiProducer)))
+  if (FAILED(hr = m_pD3D11Queue->OpenProducer(m_pD3DDeviceKodi, &m_pD3D11Producer)))
     return hr;
-  if (FAILED(hr = m_pKodiQueue->OpenConsumer(m_pD3DDeviceMadVR, &m_pMadvrConsumer)))
+  if (FAILED(hr = m_pD3D11Queue->OpenConsumer(m_pD3DDeviceMadVR, &m_pD3D9Consumer)))
     return hr;
 
   return hr;
 }
 
-HRESULT CMadvrSharedRender::CreateTextures(IDirect3DDevice9Ex* pD3DDeviceKodi, IDirect3DDevice9Ex* pD3DDeviceMadVR, int width, int height)
+HRESULT CMadvrSharedRender::CreateTextures(ID3D11Device* pD3DDeviceKodi, IDirect3DDevice9Ex* pD3DDeviceMadVR, int width, int height)
 {
   HRESULT hr;
   m_pD3DDeviceKodi = pD3DDeviceKodi;
   m_pD3DDeviceMadVR = pD3DDeviceMadVR;
-  m_dwTextureWidth = width;
-  m_dwTextureHeight = height;
+  m_dwWidth = width;
+  m_dwHeight = height;
 
-  // Create vertex buffer
+  // Create VertexBuffer
   if (FAILED(hr = m_pD3DDeviceMadVR->CreateVertexBuffer(sizeof(VID_FRAME_VERTEX) * 4, D3DUSAGE_WRITEONLY, D3DFVF_VID_FRAME_VERTEX, D3DPOOL_DEFAULT, &m_pMadvrVertexBuffer, NULL)))
     CLog::Log(LOGDEBUG, "%s Failed to create madVR vertex buffer", __FUNCTION__);
 
-  // Create under surface queue
+  // Create Under Surface Queue
   if (FAILED(hr = CreateSharedQueueResource()))
     CLog::Log(LOGDEBUG, "%s Failed to create under surface queue", __FUNCTION__);
 
-  // Create over shared texture
+  // Create Over Shared Texture
   if (FAILED(hr = CreateSharedResource(&m_pMadvrOverTexture, &m_pKodiOverTexture, &m_pKodiOverSurface)))
     CLog::Log(LOGDEBUG, "%s Failed to create over shared texture", __FUNCTION__);
 
   return hr;
 }
 
-HRESULT CMadvrSharedRender::Render(MADVR_RENDER_LAYER layer, int width, int height)
+HRESULT CMadvrSharedRender::Render(MADVR_RENDER_LAYER layer)
 {
   if (!CMadvrCallback::Get()->GetRenderOnMadvr() || (g_graphicsContext.IsFullScreenVideo() && layer == RENDER_LAYER_UNDER))
     return CALLBACK_INFO_DISPLAY;
-
-  m_dwWidth = width;
-  m_dwHeight = height;
-
+  
   // Dequeue GUI Textures
   DeQueue(layer);
 
@@ -178,17 +179,17 @@ void CMadvrSharedRender::DeQueue(MADVR_RENDER_LAYER layer)
   UINT size = sizeof(metaData);
   IDirect3DTexture9* pTexture9;
 
-  HRESULT hr = m_pMadvrConsumer->Dequeue(__uuidof(IDirect3DTexture9), (void**)&pTexture9, &metaData, &size, 0);
+  HRESULT hr = m_pD3D9Consumer->Dequeue(__uuidof(IDirect3DTexture9), (void**)&pTexture9, &metaData, &size, 0);
   if (SUCCEEDED(hr))
   {
-    SAFE_RELEASE(m_pMadvrUnderTexture);
+    SAFE_RELEASE(m_pUnderTexture9);
 
-    m_pMadvrUnderTexture = pTexture9;
+    m_pUnderTexture9 = pTexture9;
     m_bGuiVisible = metaData->bGuiVisible;
     m_bGuiVisibleOver = metaData->bGuiVisibleOver;
 
-    m_pMadvrProducer->Enqueue(pTexture9, NULL, NULL, NULL);
-    m_pMadvrProducer->Flush(NULL, NULL);
+    m_pD3D9Producer->Enqueue(pTexture9, NULL, NULL, NULL);
+    m_pD3D9Producer->Flush(NULL, NULL);
   }
 }
 
@@ -229,31 +230,33 @@ HRESULT CMadvrSharedRender::RenderMadvr(MADVR_RENDER_LAYER layer)
 HRESULT CMadvrSharedRender::RenderToTexture(MADVR_RENDER_LAYER layer)
 {
   HRESULT hr = S_OK;
+  ID3D11DeviceContext* pContext = g_Windowing.Get3D11Context();
 
   CMadvrCallback::Get()->SetCurrentVideoLayer(layer);
+  g_Windowing.SetVSync(false);
 
   if (layer == RENDER_LAYER_UNDER)
   {
-    IDirect3DSurface9* pSurface = nullptr;
-    IDirect3DTexture9* pTexture = nullptr;
+    ID3D11RenderTargetView* pRenderTargetView = nullptr;
+    ID3D11Texture2D*        pSurface11 = nullptr;
 
     CMadvrCallback::Get()->ResetRenderCount();
 
-    hr = m_pKodiConsumer->Dequeue(__uuidof(IDirect3DTexture9), (void**)&pTexture, NULL, NULL, INFINITE);
+    hr = m_pD3D11Consumer->Dequeue(__uuidof(ID3D11Texture2D), (void**)&pSurface11, NULL, NULL, INFINITE);
     if (SUCCEEDED(hr))
     {
-      pTexture->GetSurfaceLevel(0, &pSurface);
-      m_pD3DDeviceKodi->SetRenderTarget(0, pSurface);
-      m_pD3DDeviceKodi->Clear(0, NULL, D3DCLEAR_TARGET, D3DXCOLOR(0, 0, 0, 0), 1.0f, 0);
-
-      m_pKodiUnderTexture = pTexture;
-      m_pKodiUnderSurface = pSurface;
+      m_pD3DDeviceKodi->CreateRenderTargetView(pSurface11, NULL, &pRenderTargetView);
+      pContext->OMSetRenderTargets(1, &pRenderTargetView, 0);
+      pContext->ClearRenderTargetView(pRenderTargetView, m_fColor);   
+      
+      m_pUnderTexture11 = pSurface11;
+      m_pUnderSurface11 = pRenderTargetView;    
     }
   }
   else
-  {
-    m_pD3DDeviceKodi->SetRenderTarget(0, m_pKodiOverSurface);
-    m_pD3DDeviceKodi->Clear(0, NULL, D3DCLEAR_TARGET, D3DXCOLOR(0, 0, 0, 0), 1.0f, 0);
+  { 
+    pContext->OMSetRenderTargets(1, &m_pKodiOverSurface, 0);
+    pContext->ClearRenderTargetView(m_pKodiOverSurface, m_fColor);
   }
 
   return hr;
@@ -265,23 +268,23 @@ void CMadvrSharedRender::Flush()
   metaData->bGuiVisible = CMadvrCallback::Get()->GuiVisible();
   metaData->bGuiVisibleOver = CMadvrCallback::Get()->GuiVisible(RENDER_LAYER_OVER);
 
-  m_pKodiProducer->Enqueue(m_pKodiUnderTexture, &metaData, sizeof(metaData), NULL);
-  m_pKodiProducer->Flush(NULL, NULL);
-  SAFE_RELEASE(m_pKodiUnderSurface);
-  SAFE_RELEASE(m_pKodiUnderTexture);
+  m_pD3D11Producer->Enqueue(m_pUnderTexture11, &metaData, sizeof(metaData), NULL);
+  m_pD3D11Producer->Flush(NULL, NULL);
+  SAFE_RELEASE(m_pUnderSurface11);
+  SAFE_RELEASE(m_pUnderTexture11);
 }
-
 
 HRESULT CMadvrSharedRender::RenderTexture(MADVR_RENDER_LAYER layer)
 {
-  IDirect3DTexture9* pTexture;
-  layer == RENDER_LAYER_UNDER ? pTexture = m_pMadvrUnderTexture : pTexture = m_pMadvrOverTexture;
+  IDirect3DTexture9* pTexture9;
+
+  layer == RENDER_LAYER_UNDER ? pTexture9 = m_pUnderTexture9 : pTexture9 = m_pMadvrOverTexture;
 
   HRESULT hr = m_pD3DDeviceMadVR->SetStreamSource(0, m_pMadvrVertexBuffer, 0, sizeof(VID_FRAME_VERTEX));
   if (FAILED(hr))
     return hr;
 
-  hr = m_pD3DDeviceMadVR->SetTexture(0, pTexture);
+  hr = m_pD3DDeviceMadVR->SetTexture(0, pTexture9);
   if (FAILED(hr))
     return hr;
 
@@ -289,7 +292,7 @@ HRESULT CMadvrSharedRender::RenderTexture(MADVR_RENDER_LAYER layer)
   if (FAILED(hr))
     return hr;
 
-  return S_OK;
+  return hr;
 }
 
 HRESULT CMadvrSharedRender::SetupVertex()
@@ -343,22 +346,6 @@ HRESULT CMadvrSharedRender::SetupVertex()
   return hr;
 }
 
-HRESULT CMadvrSharedRender::StoreKodiDeviceState()
-{
-  HRESULT hr = E_UNEXPECTED;
-
-  if (FAILED(hr = m_pD3DDeviceKodi->GetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, &m_KODI_D3DRS_SEPARATEALPHABLENDENABLE)))
-    return hr;
-
-  if (FAILED(hr = m_pD3DDeviceKodi->GetRenderState(D3DRS_SRCBLENDALPHA, &m_KODI_D3DRS_SRCBLENDALPHA)))
-    return hr;
-
-  if (FAILED(hr = m_pD3DDeviceKodi->GetRenderState(D3DRS_DESTBLENDALPHA, &m_KODI_D3DRS_DESTBLENDALPHA)))
-    return hr;
-
-  return hr;
-}
-
 HRESULT CMadvrSharedRender::StoreMadDeviceState()
 {
   HRESULT hr = E_UNEXPECTED;
@@ -402,21 +389,6 @@ HRESULT CMadvrSharedRender::StoreMadDeviceState()
   return hr;
 }
 
-HRESULT CMadvrSharedRender::SetupKodiDeviceState()
-{
-  HRESULT hr = E_UNEXPECTED;
-
-  if (FAILED(hr = m_pD3DDeviceKodi->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, TRUE)))
-    return hr;
-
-  if (FAILED(hr = m_pD3DDeviceKodi->SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_ONE)))
-    return hr;
-
-  if (FAILED(hr = m_pD3DDeviceKodi->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_INVSRCALPHA)))
-    return hr;
-
-  return hr;
-}
 HRESULT CMadvrSharedRender::SetupMadDeviceState()
 {
   HRESULT hr = E_UNEXPECTED;
@@ -455,22 +427,6 @@ HRESULT CMadvrSharedRender::SetupMadDeviceState()
     return hr;
 
   if (FAILED(hr = m_pD3DDeviceMadVR->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA)))
-    return hr;
-
-  return hr;
-}
-
-HRESULT CMadvrSharedRender::RestoreKodiDeviceState()
-{
-  HRESULT hr = E_UNEXPECTED;
-
-  if (FAILED(hr = m_pD3DDeviceKodi->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, m_KODI_D3DRS_SEPARATEALPHABLENDENABLE)))
-    return hr;
-
-  if (FAILED(hr = m_pD3DDeviceKodi->SetRenderState(D3DRS_SRCBLENDALPHA, m_KODI_D3DRS_SRCBLENDALPHA)))
-    return hr;
-
-  if (FAILED(hr = m_pD3DDeviceKodi->SetRenderState(D3DRS_DESTBLENDALPHA, m_KODI_D3DRS_DESTBLENDALPHA)))
     return hr;
 
   return hr;

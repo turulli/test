@@ -2013,11 +2013,6 @@ void CApplication::Render()
 
   g_Windowing.EndRender();
 
-#ifdef HAS_DS_PLAYER    
-  if (CMadvrCallback::Get()->ReadyMadvr())
-    CMadvrCallback::Get()->GetCallback()->Flush();
-#endif
-
   // reset our info cache - we do this at the end of Render so that it is
   // fresh for the next process(), or after a windowclose animation (where process()
   // isn't called)
@@ -2051,14 +2046,14 @@ void CApplication::Render()
     if (frameTime < singleFrameTime)
       Sleep(singleFrameTime - frameTime);
   }
-#ifdef HAS_DS_PLAYER    
-  if (!CMadvrCallback::Get()->ReadyMadvr())
-#endif
+
   if (flip)
     g_graphicsContext.Flip(dirtyRegions);
 
 #ifdef HAS_DS_PLAYER    
-  if (!CMadvrCallback::Get()->ReadyMadvr())
+  if (CMadvrCallback::Get()->ReadyMadvr())
+    CMadvrCallback::Get()->GetCallback()->Flush();
+  else
 #endif
   if (!extPlayerActive && g_graphicsContext.IsFullScreenVideo() && !m_pPlayer->IsPausedPlayback())
   {
