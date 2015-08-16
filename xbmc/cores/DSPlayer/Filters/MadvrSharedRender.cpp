@@ -239,7 +239,7 @@ HRESULT CMadvrSharedRender::RenderToTexture(MADVR_RENDER_LAYER layer)
 
     CMadvrCallback::Get()->ResetRenderCount();
 
-    hr = m_pKodiConsumer->Dequeue(__uuidof(IDirect3DTexture9), (void**)&pTexture, NULL, NULL, INFINITE);
+    hr = m_pKodiConsumer->Dequeue(__uuidof(IDirect3DTexture9), (void**)&pTexture, NULL, NULL, 100);
     if (SUCCEEDED(hr))
     {
       pTexture->GetSurfaceLevel(0, &pSurface);
