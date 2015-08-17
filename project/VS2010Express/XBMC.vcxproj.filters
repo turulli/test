@@ -3277,6 +3277,9 @@
     <ClCompile Include="..\..\xbmc\cores\DSPlayer\Utils\DSFileUtils.cpp">
       <Filter>cores\DSPlayer\Utils</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\xbmc\cores\DSPlayer\Filters\MadvrSettingsManager.cpp">
+      <Filter>cores\DSPlayer\Filters\Video Renderers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\xbmc\win32\pch.h">
@@ -6375,6 +6378,9 @@
     </ClInclude>
     <ClInclude Include="..\..\xbmc\cores\DSPlayer\Utils\DSFileUtils.h">
       <Filter>cores\DSPlayer\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\cores\DSPlayer\Filters\MadvrSettingsManager.h">
+      <Filter>cores\DSPlayer\Filters\Video Renderers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
