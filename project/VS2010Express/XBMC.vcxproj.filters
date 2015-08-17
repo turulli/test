@@ -3283,6 +3283,9 @@
     <ClCompile Include="..\..\xbmc\win32\dxerr.cpp">
       <Filter>win32</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\xbmc\cores\DSPlayer\Filters\MadvrSettingsManager.cpp">
+      <Filter>cores\DSPlayer\Filters\Video Renderers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\xbmc\win32\pch.h">
@@ -6384,6 +6387,9 @@
     </ClInclude>
     <ClInclude Include="..\..\xbmc\win32\dxerr.h">
       <Filter>win32</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\cores\DSPlayer\Filters\MadvrSettingsManager.h">
+      <Filter>cores\DSPlayer\Filters\Video Renderers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
