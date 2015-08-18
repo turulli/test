@@ -146,6 +146,7 @@ public:
   virtual void EnableExclusive(bool bEnable);
   virtual void SetMadvrPixelShader();
   virtual void RestoreMadvrSettings();
+  virtual void LoadMadvrSettings(MADVR_LOAD_TYPE type);
   virtual void SetResolution();
   virtual void RenderToTexture(MADVR_RENDER_LAYER layer){ m_pMadvrShared->RenderToTexture(layer); };
   virtual bool ParentWindowProc(HWND hWnd, UINT uMsg, WPARAM *wParam, LPARAM *lParam, LRESULT *ret);
