@@ -3281,10 +3281,10 @@ PlayBackRet CApplication::PlayFile(const CFileItem& item, bool bRestart)
     CMediaSettings::GetInstance().GetCurrentVideoSettings() = CMediaSettings::GetInstance().GetDefaultVideoSettings();
     CMediaSettings::GetInstance().GetCurrentAudioSettings() = CMediaSettings::GetInstance().GetDefaultAudioSettings();
 #ifdef HAS_DS_PLAYER
-    CMediaSettings::Get().GetAtStartVideoSettings() = CMediaSettings::Get().GetCurrentVideoSettings();
+    CMediaSettings::GetInstance().GetAtStartVideoSettings() = CMediaSettings::GetInstance().GetCurrentVideoSettings();
 
-    CMediaSettings::Get().GetCurrentMadvrSettings() = CMediaSettings::Get().GetDefaultMadvrSettings();
-    CMediaSettings::Get().GetAtStartMadvrSettings() = CMediaSettings::Get().GetCurrentMadvrSettings();
+    CMediaSettings::GetInstance().GetCurrentMadvrSettings() = CMediaSettings::GetInstance().GetDefaultMadvrSettings();
+    CMediaSettings::GetInstance().GetAtStartMadvrSettings() = CMediaSettings::GetInstance().GetCurrentMadvrSettings();
 #endif
     // see if we have saved options in the database
 
@@ -3919,7 +3919,7 @@ void CApplication::LoadVideoSettings(const CFileItem& item)
   }
 
 #ifdef HAS_DS_PLAYER
-  CMediaSettings::Get().GetAtStartVideoSettings() = CMediaSettings::Get().GetCurrentVideoSettings();
+  CMediaSettings::GetInstance().GetAtStartVideoSettings() = CMediaSettings::GetInstance().GetCurrentVideoSettings();
 
   CDSPlayerDatabase dsdbs;
   if (dsdbs.Open())
@@ -3931,11 +3931,11 @@ void CApplication::LoadVideoSettings(const CFileItem& item)
     CLog::Log(LOGDEBUG, "Loading madvr settings for %s with resolution id: %i", item.GetPath().c_str(), res);
 
     // Load stored settings if they exist, otherwise use default
-    if (!dsdbs.GetVideoSettings(item.GetPath().c_str(), CMediaSettings::Get().GetCurrentMadvrSettings()))
-      if (!dsdbs.GetDefResMadvrSettings(res, CMediaSettings::Get().GetCurrentMadvrSettings())) 
-        CMediaSettings::Get().GetCurrentMadvrSettings() = CMediaSettings::Get().GetDefaultMadvrSettings();
+    if (!dsdbs.GetVideoSettings(item.GetPath().c_str(), CMediaSettings::GetInstance().GetCurrentMadvrSettings()))
+      if (!dsdbs.GetDefResMadvrSettings(res, CMediaSettings::GetInstance().GetCurrentMadvrSettings())) 
+        CMediaSettings::GetInstance().GetCurrentMadvrSettings() = CMediaSettings::GetInstance().GetDefaultMadvrSettings();
 
-    CMediaSettings::Get().GetAtStartMadvrSettings() = CMediaSettings::Get().GetCurrentMadvrSettings();
+    CMediaSettings::GetInstance().GetAtStartMadvrSettings() = CMediaSettings::GetInstance().GetCurrentMadvrSettings();
 
     dsdbs.Close();
   }

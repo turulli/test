@@ -415,9 +415,9 @@ void CGraphicContext::SetVideoResolutionInternal(RESOLUTION res, bool forceUpdat
     //pause the player during the refreshrate change
     int delay = CSettings::GetInstance().GetInt(CSettings::SETTING_VIDEOPLAYER_PAUSEAFTERREFRESHCHANGE);
 #ifdef HAS_DS_PLAYER
-    if (delay > 0 && CSettings::Get().GetInt(CSettings::SETTING_VIDEOPLAYER_ADJUSTREFRESHRATE) != ADJUST_REFRESHRATE_OFF && g_application.m_pPlayer->IsPlayingVideo() && !g_application.m_pPlayer->IsPausedPlayback() && !CMadvrCallback::Get()->UsingMadvr())
+    if (delay > 0 && CSettings::GetInstance().GetInt(CSettings::SETTING_VIDEOPLAYER_ADJUSTREFRESHRATE) != ADJUST_REFRESHRATE_OFF && g_application.m_pPlayer->IsPlayingVideo() && !g_application.m_pPlayer->IsPausedPlayback() && !CMadvrCallback::Get()->UsingMadvr())
 #else
-    if (delay > 0 && CSettings::Get().GetInt(CSettings::SETTING_VIDEOPLAYER_ADJUSTREFRESHRATE) != ADJUST_REFRESHRATE_OFF && g_application.m_pPlayer->IsPlayingVideo() && !g_application.m_pPlayer->IsPausedPlayback())
+    if (delay > 0 && CSettings::GetInstance().GetInt(CSettings::SETTING_VIDEOPLAYER_ADJUSTREFRESHRATE) != ADJUST_REFRESHRATE_OFF && g_application.m_pPlayer->IsPlayingVideo() && !g_application.m_pPlayer->IsPausedPlayback())
 #endif
     {
       g_application.m_pPlayer->Pause();

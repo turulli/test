@@ -39,7 +39,7 @@ CGraphFilters::~CGraphFilters()
 {
   if (m_isKodiRealFS)
   {
-    CSettings::Get().SetBool("videoscreen.fakefullscreen", false);
+    CSettings::GetInstance().SetBool("videoscreen.fakefullscreen", false);
     m_isKodiRealFS = false;
   }
 }
