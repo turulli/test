@@ -51,6 +51,7 @@ public:
   virtual void SetMadvrPixelShader(){};
   virtual void RestoreMadvrSettings(){};
   virtual void LoadMadvrSettings(MADVR_LOAD_TYPE type){};
+  virtual void GetProfileActiveName(std::string *profile){};
   virtual void SetResolution(){};
   virtual void RenderToTexture(MADVR_RENDER_LAYER layer){};
   virtual bool ParentWindowProc(HWND hWnd, UINT uMsg, WPARAM *wParam, LPARAM *lParam, LRESULT *ret) { return false; }
