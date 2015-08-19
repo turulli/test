@@ -1056,7 +1056,7 @@ bool CDSPlayer::OnAction(const CAction &action)
 
 void CDSPlayer::SetMadvrResolution()
 {
-  if (!CSettings::Get().GetBool("dsplayer.managemadvrsettings"))
+  if (CSettings::Get().GetInt("dsplayer.madvrsettingswithkodi") != KODIGUI_LOAD_DSPLAYER)
     return;
 
   CStreamDetails streamDetails;
