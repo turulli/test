@@ -1976,8 +1976,7 @@ void CApplication::Render()
   if(!g_Windowing.BeginRender())
     return;
 #ifdef HAS_DS_PLAYER
-  if (CMadvrCallback::Get()->ReadyMadvr())
-    CMadvrCallback::Get()->GetCallback()->RenderToTexture(RENDER_LAYER_UNDER);
+    CMadvrCallback::Get()->RenderToTexture(RENDER_LAYER_UNDER);
 #endif
   CDirtyRegionList dirtyRegions;
 
@@ -2051,9 +2050,9 @@ void CApplication::Render()
     g_graphicsContext.Flip(dirtyRegions);
 
 #ifdef HAS_DS_PLAYER    
-  if (CMadvrCallback::Get()->ReadyMadvr())
-    CMadvrCallback::Get()->GetCallback()->Flush();
-  else
+  CMadvrCallback::Get()->Flush();
+
+  if (!CMadvrCallback::Get()->ReadyMadvr())
 #endif
   if (!extPlayerActive && g_graphicsContext.IsFullScreenVideo() && !m_pPlayer->IsPausedPlayback())
   {
