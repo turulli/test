@@ -22,24 +22,19 @@
 #include "windowing/WindowingFactory.h"
 #include <moreuuids.h>
 #include "RendererSettings.h"
-#include "Application.h"
 #include "ApplicationMessenger.h"
-#include "cores/VideoRenderers/RenderManager.h"
 #include "guilib/GUIWindowManager.h"
 #include "settings/Settings.h"
-#include "utils/CharsetConverter.h"
 #include "cores/DSPlayer/Filters/MadvrSettings.h"
-#include "settings/MediaSettings.h"
-#include "settings/DisplaySettings.h"
 #include "PixelShaderList.h"
 #include "DSPlayer.h"
 #include "settings/AdvancedSettings.h"
+#include "utils/log.h"
 
 #define ShaderStage_PreScale 0
 #define ShaderStage_PostScale 1
 
 extern bool g_bExternalSubtitleTime;
-ThreadIdentifier CmadVRAllocatorPresenter::m_threadID = 0;
 
 //
 // CmadVRAllocatorPresenter
@@ -57,7 +52,6 @@ CmadVRAllocatorPresenter::CmadVRAllocatorPresenter(HWND hWnd, HRESULT& hr, CStdS
   m_firstBoot = true;
   m_isEnteringExclusive = false;
   m_updateDisplayLatencyForMadvr = false;
-  m_threadID = 0;
   m_kodiGuiDirtyAlgo = g_advancedSettings.m_guiAlgorithmDirtyRegions;
   m_pMadvrShared = DNew CMadvrSharedRender();
   
@@ -199,11 +193,6 @@ bool CmadVRAllocatorPresenter::ParentWindowProc(HWND hWnd, UINT uMsg, WPARAM *wP
     return false;
 }
 
-bool CmadVRAllocatorPresenter::IsCurrentThreadId()
-{
-  return CThread::IsCurrentThread(m_threadID);
-}
-
 STDMETHODIMP CmadVRAllocatorPresenter::ClearBackground(LPCSTR name, REFERENCE_TIME frameStart, RECT *fullOutputRect, RECT *activeVideoRect)
 {
   return m_pMadvrShared->Render(RENDER_LAYER_UNDER, fullOutputRect->right - fullOutputRect->left, fullOutputRect->bottom - fullOutputRect->top);
@@ -242,13 +231,12 @@ HRESULT CmadVRAllocatorPresenter::SetDevice(IDirect3DDevice9* pD3DDev)
     m_pMadvrShared->CreateTextures((IDirect3DDevice9Ex*)g_Windowing.Get3DDevice(), (IDirect3DDevice9Ex*)pD3DDev, (int)m_ScreenSize.cx, (int)m_ScreenSize.cy);
 
     m_firstBoot = false;
-    m_threadID = CThread::GetCurrentThreadId();
     g_advancedSettings.m_guiAlgorithmDirtyRegions = DIRTYREGION_SOLVER_FILL_VIEWPORT_ALWAYS;
     m_pMadvrShared->StoreKodiDeviceState();
     m_pMadvrShared->SetupKodiDeviceState();
   }
 
-  Com::SmartSize size;
+  Com::SmartSize size(m_ScreenSize.cx,m_ScreenSize.cy);
 
   if (m_pAllocator) {
     m_pAllocator->ChangeDevice(pD3DDev);
