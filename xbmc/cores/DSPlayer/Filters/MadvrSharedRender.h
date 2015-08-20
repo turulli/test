@@ -38,16 +38,19 @@ public:
   bool bGuiVisibleOver;
 };
 
-class CMadvrSharedRender
+class CMadvrSharedRender: public IMadvrPaintCallback
 {
+
 public:
   CMadvrSharedRender();
   virtual ~CMadvrSharedRender();
 
+  // IMadvrPaintCallback
+  virtual HRESULT RenderToTexture(MADVR_RENDER_LAYER layer);
+  virtual void Flush();
+
   HRESULT CreateTextures(IDirect3DDevice9Ex* pD3DDeviceKodi, IDirect3DDevice9Ex* pD3DDeviceMadVR, int width, int height);
   HRESULT Render(MADVR_RENDER_LAYER layer, int width, int height);
-  HRESULT RenderToTexture(MADVR_RENDER_LAYER layer);
-  void Flush();
   HRESULT StoreKodiDeviceState();
   HRESULT SetupKodiDeviceState();
   HRESULT RestoreKodiDeviceState();

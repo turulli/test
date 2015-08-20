@@ -1976,8 +1976,7 @@ void CApplication::Render()
   if(!g_Windowing.BeginRender())
     return;
 #ifdef HAS_DS_PLAYER
-  if (CMadvrCallback::Get()->ReadyMadvr())
-    CMadvrCallback::Get()->GetCallback()->RenderToTexture(RENDER_LAYER_UNDER);
+    CMadvrCallback::Get()->RenderToTexture(RENDER_LAYER_UNDER);
 #endif
   CDirtyRegionList dirtyRegions;
 
@@ -2014,8 +2013,7 @@ void CApplication::Render()
   g_Windowing.EndRender();
 
 #ifdef HAS_DS_PLAYER    
-  if (CMadvrCallback::Get()->ReadyMadvr())
-    CMadvrCallback::Get()->GetCallback()->Flush();
+  CMadvrCallback::Get()->Flush();
 #endif
 
   // reset our info cache - we do this at the end of Render so that it is

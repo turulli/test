@@ -80,6 +80,8 @@ HRESULT CMadvrSharedRender::CreateSharedResource(IDirect3DTexture9** ppTextureMa
   if (FAILED(hr = pTexture->GetSurfaceLevel(0, ppSurfaceKodi)))
     return hr;
 
+  CMadvrCallback::Get()->Register(this);
+
   return hr;
 }
 
