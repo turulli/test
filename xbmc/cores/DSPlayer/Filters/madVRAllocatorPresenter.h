@@ -32,7 +32,7 @@
 
 class CmadVRAllocatorPresenter
   : public ISubPicAllocatorPresenterImpl,
-  public IPaintCallbackMadvr
+  public IMadvrAllocatorCallback
 {
   class COsdRenderCallback : public CUnknown, public IOsdRenderCallback, public CCritSec
   {
@@ -140,14 +140,12 @@ public:
   STDMETHODIMP GetDIB(BYTE* lpDib, DWORD* size);
   STDMETHODIMP SetPixelShader(LPCSTR pSrcData, LPCSTR pTarget);
 
-  //IPaintCallbackMadvr
+  // IMadvrAllocatorCallback
   virtual bool IsCurrentThreadId();
   virtual bool IsEnteringExclusive(){ return m_isEnteringExclusive; }
   virtual void EnableExclusive(bool bEnable);
   virtual void SetMadvrPixelShader();
-  virtual void GetProfileActiveName(std::string *profile){ m_pSettingsManager->GetProfileActiveName(profile); };
   virtual void SetResolution();
-  virtual void RenderToTexture(MADVR_RENDER_LAYER layer){ m_pMadvrShared->RenderToTexture(layer); };
   virtual bool ParentWindowProc(HWND hWnd, UINT uMsg, WPARAM *wParam, LPARAM *lParam, LRESULT *ret);
   virtual void SetMadvrPosition(CRect wndRect, CRect videoRect);
 
