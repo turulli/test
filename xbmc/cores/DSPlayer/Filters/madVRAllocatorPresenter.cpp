@@ -22,18 +22,15 @@
 #include "windowing/WindowingFactory.h"
 #include <moreuuids.h>
 #include "RendererSettings.h"
-#include "Application.h"
-#include "ApplicationMessenger.h"
 #include "cores/VideoRenderers/RenderManager.h"
 #include "guilib/GUIWindowManager.h"
 #include "settings/Settings.h"
-#include "utils/CharsetConverter.h"
+#include "settings/AdvancedSettings.h"
 #include "cores/DSPlayer/Filters/MadvrSettings.h"
 #include "settings/MediaSettings.h"
 #include "settings/DisplaySettings.h"
 #include "PixelShaderList.h"
 #include "DSPlayer.h"
-#include "settings/AdvancedSettings.h"
 
 #define ShaderStage_PreScale 0
 #define ShaderStage_PostScale 1
