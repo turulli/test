@@ -42,8 +42,7 @@ void CGUITextureD3D::Begin(color_t color)
   CBaseTexture* texture = m_texture.m_textures[m_currentFrame];
 
 #ifdef HAS_DS_PLAYER
-  // Render count to notice when GUI it's active or deactive (useful for madVR latency mode)
-  if (CMadvrCallback::Get()->ReadyMadvr())
+  // Render count to detect when the GUI it's active or deactive (useful for madVR latency mode)
     CMadvrCallback::Get()->IncRenderCount();
 #endif
 

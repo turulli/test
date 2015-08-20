@@ -1879,7 +1879,7 @@ bool CApplication::RenderNoPresent()
   MEASURE_FUNCTION;
 
 #ifdef HAS_DS_PLAYER
-  if (CMadvrCallback::Get()->ReadyMadvr() && !CMadvrCallback::Get()->GetCallback()->IsCurrentThreadId())
+  if (CMadvrCallback::Get()->ReadyMadvr() && !CMadvrCallback::Get()->IsCurrentThreadId())
     return false;
 #endif
 
@@ -5285,7 +5285,7 @@ bool CApplication::IsCurrentThread() const
 #ifdef HAS_DS_PLAYER
   if (CMadvrCallback::Get()->UsingMadvr() && checkForMadvr)
   {
-    bool isMadvrThread = CMadvrCallback::Get()->GetCallback()->IsCurrentThreadId();
+    bool isMadvrThread = CMadvrCallback::Get()->IsCurrentThreadId();
     bool isApplicationThread = CThread::IsCurrentThread(m_threadID);
     return (isMadvrThread || isApplicationThread);
   }
