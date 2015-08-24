@@ -717,6 +717,10 @@ void CSettings::InitializeISettingCallbacks()
   settingSet.insert("dsplayer.rules");
   settingSet.insert("dsplayer.filters");
   settingSet.insert("dsplayer.playercore");
+  settingSet.insert("dsplayer.lavsplitter");
+  settingSet.insert("dsplayer.lavvideo");
+  settingSet.insert("dsplayer.lavaudio");
+  settingSet.insert("dsplayer.xysubfilter");
 #endif
   m_settingsManager->RegisterCallback(&CMediaSettings::Get(), settingSet);
 
