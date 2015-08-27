@@ -1061,8 +1061,10 @@ void CDSPlayer::SetMadvrResolution()
 
   CStreamDetails streamDetails;
   int res = streamDetails.VideoDimsToResolution(GetPictureWidth(), GetPictureHeight());
+  std::string str = g_application.CurrentFileItem().GetVideoInfoTag()->m_strShowTitle;
 
   CMediaSettings::Get().GetCurrentMadvrSettings().m_Resolution = res;
+  CMediaSettings::Get().GetCurrentMadvrSettings().m_TvShowName = str;
 }
 
 // Time is in millisecond
