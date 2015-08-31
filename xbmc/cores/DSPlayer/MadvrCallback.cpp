@@ -142,10 +142,10 @@ HRESULT CMadvrCallback::RenderToTexture(MADVR_RENDER_LAYER layer)
   return E_UNEXPECTED;
 }
 
-void CMadvrCallback::Flush()
+void CMadvrCallback::EndRender()
 {
   if (m_pPaintCallback && ReadyMadvr())
-    m_pPaintCallback->Flush();
+    m_pPaintCallback->EndRender();
 }
 
 // IMadvrSettingCallback

@@ -2050,8 +2050,7 @@ void CApplication::Render()
     g_graphicsContext.Flip(dirtyRegions);
 
 #ifdef HAS_DS_PLAYER    
-  CMadvrCallback::Get()->Flush();
-
+  CMadvrCallback::Get()->EndRender();
   if (!CMadvrCallback::Get()->ReadyMadvr())
 #endif
   if (!extPlayerActive && g_graphicsContext.IsFullScreenVideo() && !m_pPlayer->IsPausedPlayback())
