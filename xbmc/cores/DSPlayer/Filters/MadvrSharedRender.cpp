@@ -64,6 +64,43 @@ void CRenderWait::Unlock()
   m_presentevent.notifyAll();
 }
 
+HRESULT CMadvrSharedRender::CreateFakeStaging(ID3D11Texture2D** ppTexture)
+{
+  D3D11_TEXTURE2D_DESC Desc;
+  Desc.Width = 1;
+  Desc.Height = 1;
+  Desc.MipLevels = 1;
+  Desc.ArraySize = 1;
+  Desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+  Desc.SampleDesc.Count = 1;
+  Desc.SampleDesc.Quality = 0;
+  Desc.Usage = D3D11_USAGE_STAGING;
+  Desc.BindFlags = 0;
+  Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+  Desc.MiscFlags = 0;
+
+  return m_pD3DDeviceKodi->CreateTexture2D(&Desc, NULL, ppTexture);
+}
+
+HRESULT CMadvrSharedRender::ForceComplete()
+{
+  HRESULT hr = S_OK;
+  D3D11_MAPPED_SUBRESOURCE region;
+  D3D11_BOX UnitBox = { 0, 0, 0, 1, 1, 1 };
+  ID3D11DeviceContext* pContext;
+
+  m_pD3DDeviceKodi->GetImmediateContext(&pContext);
+  pContext->CopySubresourceRegion(m_pKodiFakeStaging, 0, 0, 0, 0, m_pKodiUnderTexture, 0, &UnitBox);
+
+  hr = pContext->Map(m_pKodiFakeStaging, 0, D3D11_MAP_READ, 0, &region);
+  if (SUCCEEDED(hr))
+  {
+    pContext->Unmap(m_pKodiFakeStaging, 0);
+    SAFE_RELEASE(pContext);
+  }
+  return hr;
+}
+
 CMadvrSharedRender::CMadvrSharedRender()
 {
   color_t clearColour = (g_advancedSettings.m_videoBlackBarColour & 0xff) * 0x010101;
@@ -83,6 +120,7 @@ CMadvrSharedRender::~CMadvrSharedRender()
   // release Kodi resources
   SAFE_RELEASE(m_pKodiUnderTexture);
   SAFE_RELEASE(m_pKodiOverTexture);
+  SAFE_RELEASE(m_pKodiFakeStaging);
 }
 
 HRESULT CMadvrSharedRender::CreateSharedResource(IDirect3DTexture9** ppTexture9, ID3D11Texture2D** ppTexture11)
@@ -120,6 +158,10 @@ HRESULT CMadvrSharedRender::CreateTextures(ID3D11Device* pD3DDeviceKodi, IDirect
   // Create Over Shared Texture
   if (FAILED(hr = CreateSharedResource(&m_pMadvrOverTexture, &m_pKodiOverTexture)))
     CLog::Log(LOGDEBUG, "%s Failed to create over shared texture", __FUNCTION__);
+
+  // Create Fake Staging Texture
+  if (FAILED(hr = CreateFakeStaging(&m_pKodiFakeStaging)))
+    CLog::Log(LOGDEBUG, "%s Failed to create Fake staging texture", __FUNCTION__);
 
   return hr;
 }
@@ -215,6 +257,10 @@ HRESULT CMadvrSharedRender::RenderToTexture(MADVR_RENDER_LAYER layer)
 
 void CMadvrSharedRender::EndRender()
 {
+  // Force to complete the rendering on Kodi device
+  g_Windowing.FinishCommandList();
+  ForceComplete();
+
   // Unlock madVR rendering
   m_madvrWait.Unlock();
 

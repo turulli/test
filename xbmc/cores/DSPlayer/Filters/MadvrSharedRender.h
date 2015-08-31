@@ -57,6 +57,8 @@ public:
 
 private:
   HRESULT CreateSharedResource(IDirect3DTexture9** ppTexture9, ID3D11Texture2D** ppTexture11);
+  HRESULT CreateFakeStaging(ID3D11Texture2D** ppTexture);
+  HRESULT ForceComplete();
   
   HRESULT RenderMadvr(MADVR_RENDER_LAYER layer);  
   HRESULT RenderTexture(MADVR_RENDER_LAYER layer);
@@ -74,6 +76,7 @@ private:
 
   ID3D11Texture2D*          m_pKodiUnderTexture = nullptr;
   ID3D11Texture2D*          m_pKodiOverTexture = nullptr;
+  ID3D11Texture2D*          m_pKodiFakeStaging = nullptr;
 
   DWORD m_dwWidth = 0;
   DWORD m_dwHeight = 0;

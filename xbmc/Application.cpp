@@ -2046,6 +2046,9 @@ void CApplication::Render()
       Sleep(singleFrameTime - frameTime);
   }
 
+#ifdef HAS_DS_PLAYER    
+  if (!CMadvrCallback::Get()->ReadyMadvr())
+#endif
   if (flip)
     g_graphicsContext.Flip(dirtyRegions);
 
