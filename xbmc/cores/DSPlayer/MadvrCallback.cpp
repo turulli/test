@@ -134,12 +134,16 @@ void CMadvrCallback::SetMadvrPosition(CRect wndRect, CRect videoRect)
 }
 
 // IMadvrPaintCallback
-HRESULT CMadvrCallback::RenderToTexture(MADVR_RENDER_LAYER layer)
+void CMadvrCallback::RenderToUnderTexture()
 {
   if (m_pPaintCallback && ReadyMadvr())
-    return m_pPaintCallback->RenderToTexture(layer);
+    m_pPaintCallback->RenderToUnderTexture();
+}
 
-  return E_UNEXPECTED;
+void CMadvrCallback::RenderToOverTexture()
+{
+  if (m_pPaintCallback && ReadyMadvr())
+    m_pPaintCallback->RenderToOverTexture();
 }
 
 void CMadvrCallback::EndRender()

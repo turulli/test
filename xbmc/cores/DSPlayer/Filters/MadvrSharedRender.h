@@ -34,9 +34,8 @@ class CRenderWait
 {
 public:
   void Wait(int ms);
-  void Lock();
   void Unlock();
-  XbmcThreads::ConditionVariable  m_presentevent;
+  XbmcThreads::ConditionVariable m_presentevent;
   CCriticalSection m_presentlock;
   SHAREDRENDER_STATE m_renderState;
 };
@@ -49,7 +48,8 @@ public:
   virtual ~CMadvrSharedRender();
 
   // IMadvrPaintCallback
-  virtual HRESULT RenderToTexture(MADVR_RENDER_LAYER layer);
+  virtual void RenderToUnderTexture();
+  virtual void RenderToOverTexture();
   virtual void EndRender();
   
   HRESULT CreateTextures(ID3D11Device* pD3DDeviceKodi, IDirect3DDevice9Ex* pD3DDeviceMadVR, int width, int height);
@@ -85,7 +85,7 @@ private:
   bool m_bGuiVisible;
   bool m_bGuiVisibleOver;
   CRenderWait m_kodiWait;
-  CRenderWait m_madvrWait;
+  CCritSec m_madvrLock;
 
   // stored madVR device state
   IDirect3DVertexShader9* m_pOldVS = nullptr;

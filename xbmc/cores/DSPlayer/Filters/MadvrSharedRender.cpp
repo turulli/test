@@ -27,9 +27,6 @@
 #include "windowing/WindowingFactory.h"
 #include "settings/AdvancedSettings.h"
 
-const int MADVRWAIT = 100;
-const int KODIWAIT = 100;
-
 const DWORD D3DFVF_VID_FRAME_VERTEX = D3DFVF_XYZRHW | D3DFVF_TEX1;
 
 struct VID_FRAME_VERTEX
@@ -44,15 +41,11 @@ struct VID_FRAME_VERTEX
 
 void CRenderWait::Wait(int ms)
 {
+  m_renderState = RENDERFRAME_LOCK;
   XbmcThreads::EndTime timeout(ms);
   CSingleLock lock(m_presentlock);
   while (m_renderState == RENDERFRAME_LOCK && !timeout.IsTimePast())
     m_presentevent.wait(lock, timeout.MillisLeft());
-}
-
-void CRenderWait::Lock()
-{
-  m_renderState = RENDERFRAME_LOCK;
 }
 
 void CRenderWait::Unlock()
@@ -168,16 +161,16 @@ HRESULT CMadvrSharedRender::CreateTextures(ID3D11Device* pD3DDeviceKodi, IDirect
 
 HRESULT CMadvrSharedRender::Render(MADVR_RENDER_LAYER layer)
 {
+  // Lock madVR thread while kodi rendering
+  CAutoLock lock(&m_madvrLock);
+
   if (!CMadvrCallback::Get()->GetRenderOnMadvr() || (g_graphicsContext.IsFullScreenVideo() && layer == RENDER_LAYER_UNDER))
     return CALLBACK_INFO_DISPLAY;
-
-  // Lock Kodi rendering
-  m_kodiWait.Lock();
 
   // Render the GUI on madVR
   RenderMadvr(layer);
 
-  // Unlock Kodi rendering (application thread)
+  // Pull the on the wait for the main Kodi application thread
   if (layer == RENDER_LAYER_OVER)
     m_kodiWait.Unlock();
 
@@ -195,9 +188,6 @@ HRESULT CMadvrSharedRender::RenderMadvr(MADVR_RENDER_LAYER layer)
 
   if (layer == RENDER_LAYER_OVER)
     m_bGuiVisibleOver ? layer = RENDER_LAYER_OVER : layer = RENDER_LAYER_UNDER;
-
-  // Wait for Kodi completing the render
-  m_madvrWait.Wait(MADVRWAIT);
 
   // Store madVR States
   if (FAILED(hr = StoreMadDeviceState()))
@@ -222,37 +212,40 @@ HRESULT CMadvrSharedRender::RenderMadvr(MADVR_RENDER_LAYER layer)
   return hr;
 }
 
-HRESULT CMadvrSharedRender::RenderToTexture(MADVR_RENDER_LAYER layer)
+void CMadvrSharedRender::RenderToUnderTexture()
 {
-  HRESULT hr = S_OK;
+  // Wait that madVR complete the rendering
+  m_kodiWait.Wait(100);
+
+  {
+    // Lock madVR thread while kodi rendering
+    CAutoLock lock(&m_madvrLock);
+    m_madvrLock.Lock();
+
+    CMadvrCallback::Get()->SetCurrentVideoLayer(RENDER_LAYER_UNDER);
+    CMadvrCallback::Get()->ResetRenderCount();
+
+    ID3D11DeviceContext* pContext = g_Windowing.Get3D11Context();
+    ID3D11RenderTargetView* pSurface11;
+
+    m_pD3DDeviceKodi->CreateRenderTargetView(m_pKodiUnderTexture, NULL, &pSurface11);
+    pContext->OMSetRenderTargets(1, &pSurface11, 0);
+    pContext->ClearRenderTargetView(pSurface11, m_fColor);
+    pSurface11->Release();
+  }
+}
+
+void CMadvrSharedRender::RenderToOverTexture()
+{
+  CMadvrCallback::Get()->SetCurrentVideoLayer(RENDER_LAYER_OVER);
+
   ID3D11DeviceContext* pContext = g_Windowing.Get3D11Context();
-
-  CMadvrCallback::Get()->SetCurrentVideoLayer(layer);
-  g_Windowing.SetVSync(false);
-
-  ID3D11Texture2D* pTexture11;
   ID3D11RenderTargetView* pSurface11;
 
-  if (layer == RENDER_LAYER_UNDER)
-  {
-    CMadvrCallback::Get()->ResetRenderCount();
-   
-    // Wait for madVR completing the render
-    m_kodiWait.Wait(KODIWAIT);
-
-    // Lock madVR rendering
-    m_madvrWait.Lock();
-    pTexture11 = m_pKodiUnderTexture;
-  }
-  else
-    pTexture11 = m_pKodiOverTexture;
-
-  m_pD3DDeviceKodi->CreateRenderTargetView(pTexture11, NULL, &pSurface11);
+  m_pD3DDeviceKodi->CreateRenderTargetView(m_pKodiOverTexture, NULL, &pSurface11);
   pContext->OMSetRenderTargets(1, &pSurface11, 0);
   pContext->ClearRenderTargetView(pSurface11, m_fColor);
   pSurface11->Release();
-  
-  return hr;
 }
 
 void CMadvrSharedRender::EndRender()
@@ -261,11 +254,11 @@ void CMadvrSharedRender::EndRender()
   g_Windowing.FinishCommandList();
   ForceComplete();
 
-  // Unlock madVR rendering
-  m_madvrWait.Unlock();
-
   m_bGuiVisible = CMadvrCallback::Get()->GuiVisible();
   m_bGuiVisibleOver = CMadvrCallback::Get()->GuiVisible(RENDER_LAYER_OVER);
+
+  // Unlock madVR rendering
+  m_madvrLock.Unlock();
 }
 
 HRESULT CMadvrSharedRender::RenderTexture(MADVR_RENDER_LAYER layer)
