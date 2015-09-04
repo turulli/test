@@ -559,7 +559,7 @@ void CGUIWindowFullScreen::Render()
 {
   g_graphicsContext.SetRenderingResolution(g_graphicsContext.GetVideoResolution(), false);
 #ifdef HAS_DS_PLAYER
-  if (!g_application.GetCurrentPlayer() == PCID_DSPLAYER)
+  if (g_application.GetCurrentPlayer() != EPC_DSPLAYER)
 #endif
   g_renderManager.Render(true, 0, 255);
   g_graphicsContext.SetRenderingResolution(m_coordsRes, m_needsScaling);
