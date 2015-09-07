@@ -379,6 +379,9 @@
     <Filter Include="shaders">
       <UniqueIdentifier>{9fe3f6e1-16d1-4437-b859-1b183adcef22}</UniqueIdentifier>
     </Filter>
+    <Filter Include="cores\DSPlayer\PVR">
+      <UniqueIdentifier>{8ac06bad-d1c3-4388-bdaf-01384aa9ace1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\xbmc\win32\pch.cpp">
@@ -3297,6 +3300,18 @@
     </ClCompile>
     <ClCompile Include="..\..\xbmc\cores\DSPlayer\Dialogs\GUIDialogLAVSplitter.cpp">
       <Filter>cores\DSPlayer\Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\cores\DSPlayer\PVR\DSArgusTV.cpp">
+      <Filter>cores\DSPlayer\PVR</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\cores\DSPlayer\PVR\DSMediaPortal.cpp">
+      <Filter>cores\DSPlayer\PVR</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\cores\DSPlayer\PVR\DSPVRBackend.cpp">
+      <Filter>cores\DSPlayer\PVR</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\cores\DSPlayer\PVR\DSSocket.cpp">
+      <Filter>cores\DSPlayer\PVR</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -6420,6 +6435,18 @@
     </ClInclude>
     <ClInclude Include="..\..\xbmc\cores\DSPlayer\Dialogs\GUIDialogLAVSplitter.h">
       <Filter>cores\DSPlayer\Dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\cores\DSPlayer\PVR\DSArgusTV.h">
+      <Filter>cores\DSPlayer\PVR</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\cores\DSPlayer\PVR\DSMediaPortal.h">
+      <Filter>cores\DSPlayer\PVR</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\cores\DSPlayer\PVR\DSPVRBackend.h">
+      <Filter>cores\DSPlayer\PVR</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\cores\DSPlayer\PVR\DSSocket.h">
+      <Filter>cores\DSPlayer\PVR</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
