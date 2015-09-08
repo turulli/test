@@ -3313,6 +3313,9 @@
     <ClCompile Include="..\..\xbmc\cores\DSPlayer\PVR\DSSocket.cpp">
       <Filter>cores\DSPlayer\PVR</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\xbmc\cores\DSPlayer\Utils\uri.cpp">
+      <Filter>cores\DSPlayer\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\xbmc\win32\pch.h">
@@ -6447,6 +6450,9 @@
     </ClInclude>
     <ClInclude Include="..\..\xbmc\cores\DSPlayer\PVR\DSSocket.h">
       <Filter>cores\DSPlayer\PVR</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\cores\DSPlayer\Utils\uri.h">
+      <Filter>cores\DSPlayer\Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
