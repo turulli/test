@@ -1229,7 +1229,7 @@ bool CDSPlayer::GetPVR(CFileItem fileItem)
 bool CDSPlayer::GetPVR(CPVRChannelPtr channel)
 {
   m_DSPVRThread.m_Channel = channel;
-  return PVRAction(PVR_SELECT_CHANNEL_BY_NUMBER);
+  return PVRAction(PVR_SELECT_CHANNEL);
 }
 bool CDSPlayer::GetPVR(int iChannel)
 {
