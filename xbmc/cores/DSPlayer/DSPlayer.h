@@ -97,13 +97,14 @@ public:
 protected:
   virtual void Process();
 };
-class CDSGraphThread : public CThread
+class CDSPlayerMessages : public CThread
 {
 private:
   CDSPlayer*    m_pPlayer;
 public:
-  CDSGraphThread(CDSPlayer * pPlayer);
+  CDSPlayerMessages(CDSPlayer * pPlayer);
   static ThreadIdentifier m_threadID;
+  void HandleMessages();
   void StopThread(bool bWait = true)
   {
     if (m_threadID)
@@ -113,14 +114,11 @@ public:
     }
     CThread::StopThread(bWait);
   }
-
 protected:
-  void HandleMessages();
   virtual void OnStartup();
   virtual void Process();
-  virtual void OnExit();
-
 };
+
 class CGraphManagementThread : public CThread
 {
 private:
@@ -262,9 +260,6 @@ public:
   static DSPLAYER_STATE PlayerState;
   static CFileItem currentFileItem;
   static CGUIDialogBoxBase* errorWindow;
-  CPlayerOptions m_PlayerOptions;
-  CEvent m_hDSGraphEvent;
-  HRESULT m_hDSGraph;
 
   CCriticalSection m_StateSection;
   CCriticalSection m_CleanSection;
@@ -286,7 +281,7 @@ public:
   
   static void PostMessage(CDSMsg *msg, bool wait = true)
   {
-    if (!m_threadID)
+    if (!CDSPlayerMessages::m_threadID)
     {
       msg->Release();
       return;
@@ -296,8 +291,8 @@ public:
       msg->Acquire();
 
     if (msg->GetMessageType() != CDSMsg::MADVR_SET_WINDOW_POS)
-      CLog::Log(LOGDEBUG, "%s Message posted : %d on thread 0x%X", __FUNCTION__, msg->GetMessageType(), m_threadID);
-    PostThreadMessage(m_threadID, WM_GRAPHMESSAGE, msg->GetMessageType(), (LPARAM)msg);
+      CLog::Log(LOGDEBUG, "%s Message posted : %d on thread 0x%X", __FUNCTION__, msg->GetMessageType(), CDSPlayerMessages::m_threadID);
+    PostThreadMessage(CDSPlayerMessages::m_threadID, WM_GRAPHMESSAGE, msg->GetMessageType(), (LPARAM)msg);
 
     if (wait)
     {
@@ -306,7 +301,7 @@ public:
     }
   }
 
-  static bool IsCurrentThread() { return CThread::IsCurrentThread(m_threadID); }
+  static bool IsCurrentThread() { return CThread::IsCurrentThread(CDSPlayerMessages::m_threadID); }
   static HWND GetDShWnd(){ return m_hWnd; }
   static void SetDsWndVisible(bool bVisible);
 
@@ -341,9 +336,10 @@ protected:
   void SetMadvrResolution();
 
   CGraphManagementThread m_pGraphThread;
-  CDSGraphThread m_pDSGraphThread;
+  CDSPlayerMessages m_pDSPlayerMessages;
   CDSPVRThread m_DSPVRThread;
   CDVDClock m_pClock;
+  CPlayerOptions m_PlayerOptions;
   CEvent m_hReadyEvent;
   static ThreadIdentifier m_threadID;
   bool m_bEof;
