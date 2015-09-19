@@ -360,7 +360,7 @@ void CAdvancedSettings::Initialize()
 
 #ifdef HAS_DS_PLAYER
   m_bDSPlayerFastChannelSwitching = true;
-  m_bDSPlayerUseUNCPathsForLiveTV = true;
+  m_bDSPlayerUseUNCPathsForLiveTV = false;
 #endif
 
   m_enableMultimediaKeys = false;
