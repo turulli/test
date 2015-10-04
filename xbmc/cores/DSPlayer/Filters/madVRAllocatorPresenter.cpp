@@ -30,8 +30,7 @@
 #include "DSPlayer.h"
 #include "utils/log.h"
 
-#define ShaderStage_PreScale 0
-#define ShaderStage_PostScale 1
+#define CHECK_HR(exp) { if (FAILED(hr = exp)) return hr; }
 
 extern bool g_bExternalSubtitleTime;
 
@@ -41,7 +40,6 @@ extern bool g_bExternalSubtitleTime;
 
 CmadVRAllocatorPresenter::CmadVRAllocatorPresenter(HWND hWnd, HRESULT& hr, CStdString& _Error)
   : ISubPicAllocatorPresenterImpl(hWnd, hr)
-  , m_ScreenSize(0, 0)
   , m_bIsFullscreen(false)
 {
 
@@ -64,22 +62,12 @@ CmadVRAllocatorPresenter::CmadVRAllocatorPresenter(HWND hWnd, HRESULT& hr, CStdS
 
 CmadVRAllocatorPresenter::~CmadVRAllocatorPresenter()
 {
-  if (m_pSRCB) {
-    // nasty, but we have to let it know about our death somehow
-    ((CSubRenderCallback*)(ISubRenderCallback2*)m_pSRCB)->SetDXRAP(nullptr);
-  }
-
-  if (m_pORCB) {
-    // nasty, but we have to let it know about our death somehow
-    ((COsdRenderCallback*)(IOsdRenderCallback*)m_pORCB)->SetDXRAP(nullptr);
-  }
-
   // Unregister madVR Exclusive Callback
-  if (Com::SmartQIPtr<IMadVRExclusiveModeCallback> pEXL = m_pDXR)
+  if (Com::SmartQIPtr<IMadVRExclusiveModeCallback> pEXL = m_pMVR)
     pEXL->Unregister(m_exclusiveCallback, this);
 
   // Let's madVR restore original display mode (when adjust refresh it's handled by madVR)
-  if (Com::SmartQIPtr<IMadVRCommand> pMadVrCmd = m_pDXR)
+  if (Com::SmartQIPtr<IMadVRCommand> pMadVrCmd = m_pMVR)
     pMadVrCmd->SendCommand("restoreDisplayModeNow");
 
   g_renderManager.UnInit();
@@ -90,17 +78,15 @@ CmadVRAllocatorPresenter::~CmadVRAllocatorPresenter()
   SAFE_DELETE(m_pMadvrShared);
   m_pSubPicQueue = nullptr;
   m_pAllocator = nullptr;
-  m_pDXR = nullptr;
-  m_pORCB = nullptr;
-  m_pSRCB = nullptr;
+  m_pMVR = nullptr;
 
   CLog::Log(LOGDEBUG, "%s Resources released", __FUNCTION__);
 }
 
 STDMETHODIMP CmadVRAllocatorPresenter::NonDelegatingQueryInterface(REFIID riid, void** ppv)
 {
-  if (riid != IID_IUnknown && m_pDXR) {
-    if (SUCCEEDED(m_pDXR->QueryInterface(riid, ppv))) {
+  if (riid != IID_IUnknown && m_pMVR) {
+    if (SUCCEEDED(m_pMVR->QueryInterface(riid, ppv))) {
       return S_OK;
     }
   }
@@ -118,7 +104,7 @@ void CmadVRAllocatorPresenter::SetResolution()
   // Set the context in FullScreenVideo
   g_graphicsContext.SetFullScreenVideo(true);
 
-  if (Com::SmartQIPtr<IMadVRInfo> pInfo = m_pDXR)
+  if (Com::SmartQIPtr<IMadVRInfo> pInfo = m_pMVR)
   {
     pInfo->GetUlonglong("frameRate", &frameRate);
     fps = 10000000.0 / frameRate;
@@ -155,18 +141,18 @@ void CmadVRAllocatorPresenter::ExclusiveCallback(LPVOID context, int event)
 
 void CmadVRAllocatorPresenter::EnableExclusive(bool bEnable)
 {
-  if (Com::SmartQIPtr<IMadVRCommand> pMadVrCmd = m_pDXR)
+  if (Com::SmartQIPtr<IMadVRCommand> pMadVrCmd = m_pMVR)
     pMadVrCmd->SendCommandBool("disableExclusiveMode", !bEnable);
 };
 
 void CmadVRAllocatorPresenter::ConfigureMadvr()
 {
-  if (Com::SmartQIPtr<IMadVRCommand> pMadVrCmd = m_pDXR)
+  if (Com::SmartQIPtr<IMadVRCommand> pMadVrCmd = m_pMVR)
     pMadVrCmd->SendCommandBool("disableSeekbar", true);
 
   m_pSettingsManager->SetBool("delayPlaybackStart2", CSettings::Get().GetBool("dsplayer.delaymadvrplayback"));
 
-  if (Com::SmartQIPtr<IMadVRExclusiveModeCallback> pEXL = m_pDXR)
+  if (Com::SmartQIPtr<IMadVRExclusiveModeCallback> pEXL = m_pMVR)
     pEXL->Register(m_exclusiveCallback, this);
 
   if (CSettings::Get().GetBool("dsplayer.madvrexclusivemode"))
@@ -176,14 +162,14 @@ void CmadVRAllocatorPresenter::ConfigureMadvr()
   }
   else
   {
-    if (Com::SmartQIPtr<IMadVRCommand> pMadVrCmd = m_pDXR)
+    if (Com::SmartQIPtr<IMadVRCommand> pMadVrCmd = m_pMVR)
       pMadVrCmd->SendCommandBool("disableExclusiveMode", true);
   }
 }
 
 bool CmadVRAllocatorPresenter::ParentWindowProc(HWND hWnd, UINT uMsg, WPARAM *wParam, LPARAM *lParam, LRESULT *ret)
 {
-  if (Com::SmartQIPtr<IMadVRSubclassReplacement> pMVRSR = m_pDXR)
+  if (Com::SmartQIPtr<IMadVRSubclassReplacement> pMVRSR = m_pMVR)
     return (pMVRSR->ParentWindowProc(hWnd, uMsg, wParam, lParam, ret) != 0);
   else
     return false;
@@ -199,17 +185,6 @@ STDMETHODIMP CmadVRAllocatorPresenter::RenderOsd(LPCSTR name, REFERENCE_TIME fra
   return m_pMadvrShared->Render(RENDER_LAYER_OVER);
 }
 
-STDMETHODIMP CmadVRAllocatorPresenter::SetDeviceOsd(IDirect3DDevice9* pD3DDev)
-{
-  if (!pD3DDev)
-  {
-    // release all resources
-    m_pSubPicQueue = nullptr;
-    m_pAllocator = nullptr;
-  }
-  return S_OK;
-}
-
 HRESULT CmadVRAllocatorPresenter::SetDevice(IDirect3DDevice9* pD3DDev)
 {
   CLog::Log(LOGDEBUG, "%s madVR's device it's ready", __FUNCTION__);
@@ -222,15 +197,23 @@ HRESULT CmadVRAllocatorPresenter::SetDevice(IDirect3DDevice9* pD3DDev)
     return S_OK;
   }
 
+  Com::SmartSize screenSize;
+
+  MONITORINFO mi;
+  mi.cbSize = sizeof(MONITORINFO);
+  if (GetMonitorInfo(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST), &mi)) {
+    screenSize.SetSize(mi.rcMonitor.right - mi.rcMonitor.left, mi.rcMonitor.bottom - mi.rcMonitor.top);
+  }
+
   if (m_firstBoot)
   { 
-    m_pMadvrShared->CreateTextures(g_Windowing.Get3D11Device(), (IDirect3DDevice9Ex*)pD3DDev, (int)m_ScreenSize.cx, (int)m_ScreenSize.cy);
+    m_pMadvrShared->CreateTextures(g_Windowing.Get3D11Device(), (IDirect3DDevice9Ex*)pD3DDev, (int)screenSize.cx, (int)screenSize.cy);
 
     m_firstBoot = false;
     g_advancedSettings.m_guiAlgorithmDirtyRegions = DIRTYREGION_SOLVER_FILL_VIEWPORT_ALWAYS;
   }
 
-  Com::SmartSize size(m_ScreenSize.cx,m_ScreenSize.cy);
+  Com::SmartSize size(screenSize.cx,screenSize.cy);
 
   if (m_pAllocator) {
     m_pAllocator->ChangeDevice(pD3DDev);
@@ -262,7 +245,7 @@ HRESULT CmadVRAllocatorPresenter::SetDevice(IDirect3DDevice9* pD3DDev)
   return hr;
 }
 
-HRESULT CmadVRAllocatorPresenter::Render( REFERENCE_TIME rtStart, REFERENCE_TIME rtStop, REFERENCE_TIME atpf, int left, int top, int right, int bottom, int width, int height)
+HRESULT CmadVRAllocatorPresenter::RenderEx(REFERENCE_TIME rtStart, REFERENCE_TIME rtStop, REFERENCE_TIME atpf, int left, int top, int right, int bottom, int width, int height)
 {
   Com::SmartRect wndRect(0, 0, width, height);
   Com::SmartRect videoRect(left, top, right, bottom);
@@ -292,7 +275,7 @@ HRESULT CmadVRAllocatorPresenter::Render( REFERENCE_TIME rtStart, REFERENCE_TIME
     // Update Display Latency for madVR (sets differents delay for each refresh as configured in advancedsettings)
     if (m_updateDisplayLatencyForMadvr)
     { 
-      if (Com::SmartQIPtr<IMadVRInfo> pInfo = m_pDXR)
+      if (Com::SmartQIPtr<IMadVRInfo> pInfo = m_pMVR)
       { 
         double refreshRate;
         pInfo->GetDouble("refreshRate", &refreshRate);
@@ -310,43 +293,22 @@ HRESULT CmadVRAllocatorPresenter::Render( REFERENCE_TIME rtStart, REFERENCE_TIME
 STDMETHODIMP CmadVRAllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
 {
   CheckPointer(ppRenderer, E_POINTER);
+  ASSERT(!m_pMVR);
 
-  if (m_pDXR) {
-    return E_UNEXPECTED;
-  }
+  HRESULT hr = S_FALSE;
 
-  m_pDXR.CoCreateInstance(CLSID_madVR, GetOwner());
-  if (!m_pDXR) {
-    return E_FAIL;
-  }
+  CHECK_HR(m_pMVR.CoCreateInstance(CLSID_madVR, GetOwner()));
 
-  // Init Settings Manager
-  m_pSettingsManager = DNew CMadvrSettingsManager(m_pDXR);
-
-  Com::SmartQIPtr<ISubRender> pSR = m_pDXR;
-  if (!pSR) {
-    m_pDXR = nullptr;
-    return E_FAIL;
-  }
-
-  m_pSRCB = DNew CSubRenderCallback(this);
-  if (FAILED(pSR->SetCallback(m_pSRCB))) {
-    m_pDXR = nullptr;
-    return E_FAIL;
-  }
+  // ISubRenderCallback
+  if (Com::SmartQIPtr<ISubRender> pSR = m_pMVR)
+    VERIFY(SUCCEEDED(pSR->SetCallback(this)));
 
   // IOsdRenderCallback
-  Com::SmartQIPtr<IMadVROsdServices> pOR = m_pDXR;
-  if (!pOR) {
-    m_pDXR = nullptr;
-    return E_FAIL;
-  }
+  if (Com::SmartQIPtr<IMadVROsdServices> pOR = m_pMVR)
+    VERIFY(SUCCEEDED(pOR->OsdSetRenderCallback("Kodi.Gui", this)));
 
-  m_pORCB = DNew COsdRenderCallback(this);
-  if (FAILED(pOR->OsdSetRenderCallback("Kodi.Gui", m_pORCB))) {
-    m_pDXR = nullptr;
-    return E_FAIL;
-  }
+  // Init Settings Manager
+  m_pSettingsManager = DNew CMadvrSettingsManager(m_pMVR);
 
   // Configure initial Madvr Settings
   ConfigureMadvr();
@@ -354,12 +316,6 @@ STDMETHODIMP CmadVRAllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
   CMadvrCallback::Get()->Register(this);
 
   (*ppRenderer = (IUnknown*)(INonDelegatingUnknown*)(this))->AddRef();
-
-  MONITORINFO mi;
-  mi.cbSize = sizeof(MONITORINFO);
-  if (GetMonitorInfo(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST), &mi)) {
-    m_ScreenSize.SetSize(mi.rcMonitor.right - mi.rcMonitor.left, mi.rcMonitor.bottom - mi.rcMonitor.top);
-  }
 
   return S_OK;
 }
@@ -374,12 +330,12 @@ void CmadVRAllocatorPresenter::SetMadvrPosition(CRect wndRect, CRect videoRect)
 
 STDMETHODIMP_(void) CmadVRAllocatorPresenter::SetPosition(RECT w, RECT v)
 {
-  if (Com::SmartQIPtr<IBasicVideo> pBV = m_pDXR) {
+  if (Com::SmartQIPtr<IBasicVideo> pBV = m_pMVR) {
     pBV->SetDefaultSourcePosition();
     pBV->SetDestinationPosition(v.left, v.top, v.right - v.left, v.bottom - v.top);
   }
 
-  if (Com::SmartQIPtr<IVideoWindow> pVW = m_pDXR) {
+  if (Com::SmartQIPtr<IVideoWindow> pVW = m_pMVR) {
     if (!g_graphicsContext.IsFullScreenVideo())
     {
       w.left = 0;
@@ -396,12 +352,12 @@ STDMETHODIMP_(SIZE) CmadVRAllocatorPresenter::GetVideoSize(bool fCorrectAR)
   SIZE size = { 0, 0 };
 
   if (!fCorrectAR) {
-    if (Com::SmartQIPtr<IBasicVideo> pBV = m_pDXR) {
+    if (Com::SmartQIPtr<IBasicVideo> pBV = m_pMVR) {
       pBV->GetVideoSize(&size.cx, &size.cy);
     }
   }
   else {
-    if (Com::SmartQIPtr<IBasicVideo2> pBV2 = m_pDXR) {
+    if (Com::SmartQIPtr<IBasicVideo2> pBV2 = m_pMVR) {
       pBV2->GetPreferredAspectRatio(&size.cx, &size.cy);
     }
   }
@@ -412,7 +368,7 @@ STDMETHODIMP_(SIZE) CmadVRAllocatorPresenter::GetVideoSize(bool fCorrectAR)
 STDMETHODIMP CmadVRAllocatorPresenter::GetDIB(BYTE* lpDib, DWORD* size)
 {
   HRESULT hr = E_NOTIMPL;
-  if (Com::SmartQIPtr<IBasicVideo> pBV = m_pDXR) {
+  if (Com::SmartQIPtr<IBasicVideo> pBV = m_pMVR) {
     hr = pBV->GetCurrentImage((long*)size, (long*)lpDib);
   }
   return hr;
@@ -447,7 +403,7 @@ void CmadVRAllocatorPresenter::SetMadvrPixelShader()
 STDMETHODIMP CmadVRAllocatorPresenter::SetPixelShader(LPCSTR pSrcData, LPCSTR pTarget)
 {
   HRESULT hr = E_NOTIMPL;
-  if (Com::SmartQIPtr<IMadVRExternalPixelShaders> pEPS = m_pDXR) {
+  if (Com::SmartQIPtr<IMadVRExternalPixelShaders> pEPS = m_pMVR) {
     if (!pSrcData && !pTarget) {
       hr = pEPS->ClearPixelShaders(false);
     }
