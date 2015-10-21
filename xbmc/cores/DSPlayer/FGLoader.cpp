@@ -600,12 +600,14 @@ HRESULT CFGLoader::LoadConfig()
     LoadFilterCoreFactorySettings("special://xbmc/system/players/dsplayer/filtersconfig.xml", FILTERS, false);
 
     // Second, medias rules
+    CGraphFilters::Get()->SetDefaultRulePriority("0");
     LoadFilterCoreFactorySettings(CProfilesManager::Get().GetUserDataItem("dsplayer/mediasconfig.xml"), MEDIAS, false);
+    CGraphFilters::Get()->SetDefaultRulePriority("100");
     LoadFilterCoreFactorySettings("special://xbmc/system/players/dsplayer/mediasconfig.xml", MEDIAS, false);
   }
   if (CSettings::Get().GetInt("dsplayer.filtersmanagement") == INTERNALFILTERS)
   {
-    
+    CGraphFilters::Get()->SetDefaultRulePriority("0");
     LoadFilterCoreFactorySettings("special://xbmc/system/players/dsplayer/filtersconfig_internal.xml", FILTERS, true);
     LoadFilterCoreFactorySettings(CProfilesManager::Get().GetUserDataItem("dsplayer/filtersconfig.xml"), FILTERS, false);
     LoadFilterCoreFactorySettings("special://xbmc/system/players/dsplayer/filtersconfig.xml", FILTERS, false);
