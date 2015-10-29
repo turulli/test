@@ -378,6 +378,10 @@ lib/cpluff/stamp-h1
 # /system/players/VideoPlayer
 /system/players/VideoPlayer/*
 
+# /system/players/dvdplayer
+/system/players/dvdplayer/*
+
+
 # /system/players/paplayer
 /system/players/paplayer/libmodplug.dll
 /system/players/paplayer/StSoundLibrary.dll

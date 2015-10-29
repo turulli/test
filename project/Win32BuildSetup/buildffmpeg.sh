@@ -93,13 +93,13 @@ echo configuring $LIBNAME
 make $MAKEFLAGS &&
 cp lib*/*.dll .libs/ &&
 cp lib*/*.lib .libs/ &&
-cp .libs/avcodec-*.dll /xbmc/system/players/VideoPlayer/ &&
-cp .libs/avformat-*.dll /xbmc/system/players/VideoPlayer/ &&
-cp .libs/avutil-*.dll /xbmc/system/players/VideoPlayer/ &&
-cp .libs/avfilter-*.dll /xbmc/system/players/VideoPlayer/ &&
-cp .libs/postproc-*.dll /xbmc/system/players/VideoPlayer/ &&
-cp .libs/swresample-*.dll /xbmc/system/players/VideoPlayer/ &&
-cp .libs/swscale-*.dll /xbmc/system/players/VideoPlayer/
+cp .libs/avcodec-*.dll /xbmc/system/players/dvdplayer/ &&
+cp .libs/avformat-*.dll /xbmc/system/players/dvdplayer/ &&
+cp .libs/avutil-*.dll /xbmc/system/players/dvdplayer/ &&
+cp .libs/avfilter-*.dll /xbmc/system/players/dvdplayer/ &&
+cp .libs/postproc-*.dll /xbmc/system/players/dvdplayer/ &&
+cp .libs/swresample-*.dll /xbmc/system/players/dvdplayer/ &&
+cp .libs/swscale-*.dll /xbmc/system/players/dvdplayer/
 
 #remove the bgprocessfile for signaling the process end
 if [ -f $BGPROCESSFILE ]; then
