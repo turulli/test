@@ -697,7 +697,7 @@ void CGUIDialogVideoSettings::InitializeSettings()
 
 #ifdef HAS_DS_PLAYER
   }
-  if (g_application.GetCurrentPlayer() == PCID_DVDPLAYER )
+  if (g_application.GetCurrentPlayer() == PCID_VideoPlayer )
   {
 #endif
   entries.clear();

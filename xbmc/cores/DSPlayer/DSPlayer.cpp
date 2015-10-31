@@ -81,7 +81,8 @@ CDSPlayer::CDSPlayer(IPlayerCallback& callback)
   m_hReadyEvent(true),
   m_pGraphThread(this),
   m_pDSGraphThread(this),
-  m_bEof(false)
+  m_bEof(false),
+  m_renderManager(m_pClock)
 {
   m_HasVideo = false;
   m_HasAudio = false;
@@ -102,7 +103,7 @@ CDSPlayer::CDSPlayer(IPlayerCallback& callback)
   CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
   m_pClock.GetClock(); // Reset the clock
-  g_dsGraph = new CDSGraph(&m_pClock, callback);
+  g_dsGraph = new CDSGraph(&m_pClock, callback, m_renderManager);
 
   // Change DVD Clock, time base
   CDVDClock::SetTimeBase((int64_t)DS_TIME_BASE);
@@ -319,6 +320,8 @@ bool CDSPlayer::OpenFileInternal(const CFileItem& file)
 
     m_hReadyEvent.Reset();
 
+    m_renderManager.PreInit(RENDERER_DSHOW);
+
     Create();
 
     // wait for the ready event
@@ -454,6 +457,8 @@ bool CDSPlayer::CloseFile(bool reopen)
   m_pGraphThread.StopThread(false);
   StopThread(false);
 
+  m_renderManager.UnInit();
+
   CLog::Log(LOGDEBUG, "%s File closed", __FUNCTION__);
   return true;
 }
@@ -466,7 +471,7 @@ void CDSPlayer::GetVideoStreamInfo(SPlayerVideoStreamInfo &info)
   info.videoCodecName = (CStreamsManager::Get()) ? CStreamsManager::Get()->GetVideoCodecName() : "";
   info.videoAspectRatio = (float)info.width / (float)info.height;
   CRect viewRect;
-  GetVideoRect(info.SrcRect, info.DestRect, viewRect);
+  m_renderManager.GetVideoRect(info.SrcRect, info.DestRect, viewRect);
   info.stereoMode == "";
 }
 
@@ -560,7 +565,10 @@ float CDSPlayer::GetAVDelay()
 
 void CDSPlayer::SetAVDelay(float fValue)
 {
-  if (CStreamsManager::Get()) CStreamsManager::Get()->SetAVDelay(fValue);
+  //get displaylatency
+  int iDisplayLatency = m_renderManager.GetDisplayLatency() * 1000;
+
+  if (CStreamsManager::Get()) CStreamsManager::Get()->SetAVDelay(fValue,iDisplayLatency);
 }
 
 float CDSPlayer::GetSubTitleDelay()
@@ -1160,7 +1168,7 @@ void CDSPlayer::UpdateChannelSwitchSettings()
 #ifdef HAS_VIDEO_PLAYBACK
   // when using fast channel switching some shortcuts are taken which 
   // means we'll have to update the view mode manually
-  g_renderManager.SetViewMode(CMediaSettings::GetInstance().GetCurrentVideoSettings().m_ViewMode);
+  m_renderManager.SetViewMode(CMediaSettings::GetInstance().GetCurrentVideoSettings().m_ViewMode);
 #endif
 }
 
@@ -1227,13 +1235,95 @@ bool CDSPlayer::ShowPVRChannelInfo()
 
 bool CDSPlayer::CachePVRStream(void) const
 {
-  return g_pPVRStream && !g_PVRManager.IsPlayingRecording() && g_advancedSettings.m_bPVRCacheInDvdPlayer;
+  return g_pPVRStream && !g_PVRManager.IsPlayingRecording() && g_advancedSettings.m_bPVRCacheInVideoPlayer;
 }
 
 CDSGraphThread::CDSGraphThread(CDSPlayer * pPlayer)
   : m_pPlayer(pPlayer), CThread("CDSGraphThread thread")
 {
   CoInitializeEx(NULL, COINIT_MULTITHREADED);
+}
+
+void CDSPlayer::FrameMove()
+{
+  m_renderManager.FrameMove();
+  m_renderManager.UpdateResolution();
+  m_renderManager.ManageCaptures();
+}
+
+void CDSPlayer::FrameWait(int ms)
+{
+  m_renderManager.FrameWait(ms);
+}
+
+bool CDSPlayer::HasFrame()
+{
+  return m_renderManager.HasFrame();
+}
+
+void CDSPlayer::Render(bool clear, uint32_t alpha, bool gui)
+{
+  m_renderManager.Render(clear, 0, alpha, gui);
+}
+
+void CDSPlayer::AfterRender()
+{
+  m_renderManager.FrameFinish();
+}
+
+void CDSPlayer::FlushRenderer()
+{
+  m_renderManager.Flush();
+}
+
+void CDSPlayer::SetRenderViewMode(int mode)
+{
+  m_renderManager.SetViewMode(mode);
+}
+
+float CDSPlayer::GetRenderAspectRatio()
+{
+  return m_renderManager.GetAspectRatio();
+}
+
+RESOLUTION CDSPlayer::GetRenderResolution()
+{
+  return g_graphicsContext.GetVideoResolution();
+}
+
+bool CDSPlayer::IsRenderingVideo()
+{
+  return m_renderManager.IsConfigured();
+}
+
+bool CDSPlayer::IsRenderingGuiLayer()
+{
+  return m_renderManager.IsGuiLayer();
+}
+
+bool CDSPlayer::IsRenderingVideoLayer()
+{
+  return m_renderManager.IsVideoLayer();
+}
+
+bool CDSPlayer::Supports(EDEINTERLACEMODE mode)
+{
+  return m_renderManager.Supports(mode);
+}
+
+bool CDSPlayer::Supports(EINTERLACEMETHOD method)
+{
+  return m_renderManager.Supports(method);
+}
+
+bool CDSPlayer::Supports(ESCALINGMETHOD method)
+{
+  return m_renderManager.Supports(method);
+}
+
+bool CDSPlayer::Supports(ERENDERFEATURE feature)
+{
+  return m_renderManager.Supports(feature);
 }
 
 void CDSGraphThread::OnStartup()

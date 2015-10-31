@@ -33,7 +33,6 @@
 
 #include "AllocatorCommon.h"
 #include "RendererSettings.h"
-#include "cores/VideoRenderers/RenderManager.h"
 #include "guilib/D3DResource.h"
 #include "IPaintCallback.h"
 #include "Utils/smartlist.h"

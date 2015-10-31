@@ -71,17 +71,33 @@ using namespace KODI::MESSAGING;
 
 CDSGraph* g_dsGraph = NULL;
 
-CDSGraph::CDSGraph(CDVDClock* pClock, IPlayerCallback& callback)
+CDSGraph::CDSGraph(CDVDClock* pClock, IPlayerCallback& callback, CRenderManager& renderManager)
   : m_pGraphBuilder(NULL),
   m_iCurrentFrameRefreshCycle(0),
   m_callback(callback),
   m_canSeek(-1),
-  m_currentVolume(0.0f)
+  m_currentVolume(0.0f),
+  m_renderManager(renderManager)
 {
 }
 
 CDSGraph::~CDSGraph()
 {
+}
+
+bool CDSGraph::Configure(unsigned int width, unsigned int height, unsigned int d_width, unsigned int d_height, float fps, unsigned flags, ERenderFormat format, unsigned extended_format, unsigned int orientation, int buffers)
+{
+  return m_renderManager.Configure(width, height, d_width, d_height, fps, flags, format, extended_format, orientation, buffers);
+}
+
+void CDSGraph::UpdateDisplayLatencyForMadvr(float refresh)
+{
+  m_renderManager.UpdateDisplayLatencyForMadvr(refresh);
+}
+
+void CDSGraph::NewFrame()
+{
+  m_renderManager.NewFrame();
 }
 
 //This is also creating the Graph
@@ -344,9 +360,10 @@ void CDSGraph::UpdateTotalTime()
 
 void CDSGraph::UpdateMadvrWindowPosition()
 {
-  CRect srcRect, destRect, viewRect;
-  g_renderManager.GetVideoRect(srcRect, destRect, viewRect);
-  CMadvrCallback::Get()->SetMadvrPosition(viewRect, destRect);
+  SPlayerVideoStreamInfo info;
+  g_application.m_pPlayer->GetVideoStreamInfo(info);
+  CRect viewRect = g_graphicsContext.GetViewWindow();
+  CMadvrCallback::Get()->SetMadvrPosition(viewRect, info.DestRect);
 }
 
 void CDSGraph::UpdateWindowPosition()

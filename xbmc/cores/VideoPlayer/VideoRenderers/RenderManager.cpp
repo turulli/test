@@ -294,6 +294,83 @@ std::string CRenderManager::GetVSyncState()
   return state;
 }
 
+bool CRenderManager::Configure(unsigned int width, unsigned int height, unsigned int d_width, unsigned int d_height, float fps, unsigned flags, ERenderFormat format, unsigned extended_format, unsigned int orientation, int buffers)
+{
+  // check if something has changed
+  {
+    float config_framerate = fps;
+    float render_framerate = g_graphicsContext.GetFPS();
+    if (CSettings::GetInstance().GetInt(CSettings::SETTING_VIDEOPLAYER_ADJUSTREFRESHRATE) == ADJUST_REFRESHRATE_OFF)
+      render_framerate = config_framerate;
+    bool changerefresh = (fps != 0) &&
+      (m_fps == 0.0 || fmod(m_fps, fps) != 0.0) &&
+      (render_framerate != config_framerate);
+
+    CSharedLock lock(m_sharedSection);
+    if (m_width == width &&
+      m_height == height &&
+      m_dwidth == d_width &&
+      m_dheight == d_height &&
+      !changerefresh &&
+      (m_flags & ~CONF_FLAGS_FULLSCREEN) == (flags & ~CONF_FLAGS_FULLSCREEN) &&
+      m_format == format &&
+      m_extended_format == extended_format &&
+      m_orientation == orientation &&
+      m_NumberBuffers == buffers &&
+      m_pRenderer != NULL)
+      return true;
+  }
+
+  std::string formatstr = GetRenderFormatName(format);
+  CLog::Log(LOGDEBUG, "CRenderManager::Configure - change configuration. %dx%d. display: %dx%d. framerate: %4.2f. format: %s", width, height, d_width,d_height, fps, formatstr.c_str());
+
+  // make sure any queued frame was fully presented
+  {
+    CSingleLock lock(m_presentlock);
+    XbmcThreads::EndTime endtime(5000);
+    while (m_presentstep != PRESENT_IDLE && m_presentstep != PRESENT_READY)
+    {
+      if (endtime.IsTimePast())
+      {
+        CLog::Log(LOGWARNING, "CRenderManager::Configure - timeout waiting for state");
+        return false;
+      }
+      m_presentevent.wait(lock, endtime.MillisLeft());
+    }
+  }
+
+  {
+    CExclusiveLock lock(m_sharedSection);
+    m_width = width;
+    m_height = height;
+    m_dwidth = d_width;
+    m_dheight = d_height;
+    m_fps = fps;
+    m_flags = flags;
+    m_format = format;
+    m_extended_format = extended_format;
+    m_orientation = orientation;
+    m_NumberBuffers = buffers;
+    m_renderState = STATE_CONFIGURING;
+    m_stateEvent.Reset();
+  }
+
+  if (!m_stateEvent.WaitMSec(1000))
+  {
+    CLog::Log(LOGWARNING, "CRenderManager::Configure - timeout waiting for configure");
+    return false;
+  }
+
+  CSharedLock lock(m_sharedSection);
+  if (m_renderState != STATE_CONFIGURED)
+  {
+    CLog::Log(LOGWARNING, "CRenderManager::Configure - failed to configure");
+    return false;
+  }
+
+  return true;
+}
+
 bool CRenderManager::Configure(DVDVideoPicture& picture, float fps, unsigned flags, unsigned int orientation, int buffers)
 {
 
@@ -738,17 +815,6 @@ void CRenderManager::CreateRenderer()
     else if (m_format == RENDER_FMT_DXVA)
     {
 #if defined(HAS_DX)
-//todo videoplayer
-#ifdef HAS_DS_PLAYER0
-      if (m_pRendererType == RENDERER_NORMAL)
-        m_pRenderer = new CWinRenderer();
-      else
-        m_pRenderer = new CWinDsRenderer();
-#else
-      m_pRenderer = new CWinRenderer();
-#endif
-
-
       m_pRenderer = new CWinRenderer();
 #endif
     }
@@ -770,6 +836,13 @@ void CRenderManager::CreateRenderer()
       m_pRenderer = new CWinRenderer();
 #endif
     }
+#ifdef HAS_DS_PLAYER
+    else if (m_format == RENDER_FMT_NONE)
+    {
+      m_pRenderer = new CWinDsRenderer();
+    }
+#endif
+
 #if defined(HAS_MMAL)
     if (!m_pRenderer)
       m_pRenderer = new CMMALRenderer;

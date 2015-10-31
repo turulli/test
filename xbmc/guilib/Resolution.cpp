@@ -25,6 +25,10 @@
 #include "settings/AdvancedSettings.h"
 #include "settings/DisplaySettings.h"
 #include <cstdlib>
+#ifdef HAS_DS_PLAYER
+#include "Application.h"
+#include "settings\Settings.h"
+#endif
 
 RESOLUTION_INFO::RESOLUTION_INFO(int width, int height, float aspect, const std::string &mode) :
   strMode(mode)
@@ -67,7 +71,7 @@ RESOLUTION CResolutionUtils::ChooseBestResolution(float fps, int width, bool is3
   if (iValue != ADJUST_REFRESHRATE_WITH_BOTH)
   {
     if ((g_application.GetCurrentPlayer() == PCID_DSPLAYER && iValue == ADJUST_REFRESHRATE_WITH_DVDPLAYER)
-      || (g_application.GetCurrentPlayer() == PCID_DVDPLAYER && iValue == ADJUST_REFRESHRATE_WITH_DSPLAYER))
+      || (g_application.GetCurrentPlayer() == PCID_VideoPlayer && iValue == ADJUST_REFRESHRATE_WITH_DSPLAYER))
       return res;
   }
 #endif

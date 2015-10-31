@@ -29,6 +29,7 @@
 #endif
 
 #include "cores/IPlayer.h"
+#include "cores/VideoPlayer/VideoRenderers/RenderManager.h"
 #include "threads/Thread.h"
 #include "threads/SingleLock.h"
 #include "utils/StdString.h"
@@ -46,9 +47,6 @@
 #include "filesystem/PVRFile.h"
 #include "pvr/PVRManager.h"
 #include "Application.h"
-#ifdef HAS_VIDEO_PLAYBACK
-#include "cores/VideoRenderers/RenderManager.h"
-#endif
 
 #if !defined(NPT_POINTER_TO_LONG)
 #define NPT_POINTER_TO_LONG(_p) ((long)(_p))
@@ -115,7 +113,7 @@ protected:
   void Process();
 };
 
-class CDSPlayer : public IPlayer, public CThread
+class CDSPlayer : public IPlayer, public CThread, public IDispResource
 {
 public:
   //IPlayer
@@ -203,9 +201,8 @@ public:
   virtual int64_t GetChapterPos(int chapterIdx = -1) { return CChaptersManager::Get()->GetChapterPos(chapterIdx); }
   virtual int  SeekChapter(int iChapter) { return CChaptersManager::Get()->SeekChapter(iChapter); }
 
-  void Update(bool bPauseDrawing) { g_renderManager.Update(); }
-  void GetVideoRect(CRect& SrcRect, CRect& DestRect, CRect& ViewRect) { g_renderManager.GetVideoRect(SrcRect, DestRect, ViewRect); }
-  virtual void GetVideoAspectRatio(float& fAR) { fAR = g_renderManager.GetAspectRatio(); }
+  void Update(bool bPauseDrawing) { m_renderManager.Update(); }
+  virtual void GetVideoAspectRatio(float& fAR) { fAR = m_renderManager.GetAspectRatio(); }
 
   virtual int GetChannels() { return (CStreamsManager::Get()) ? CStreamsManager::Get()->GetChannels() : 0; };
   virtual int GetBitsPerSample() { return (CStreamsManager::Get()) ? CStreamsManager::Get()->GetBitsPerSample() : 0; };
@@ -229,6 +226,23 @@ public:
 
   virtual bool SwitchChannel(const PVR::CPVRChannelPtr &channel);
   virtual bool CachePVRStream(void) const;
+
+  virtual void FrameMove();
+  virtual void FrameWait(int ms);
+  virtual bool HasFrame();
+  virtual void Render(bool clear, uint32_t alpha = 255, bool gui = true);
+  virtual void AfterRender();
+  virtual void FlushRenderer();
+  virtual void SetRenderViewMode(int mode);
+  float GetRenderAspectRatio();
+  virtual RESOLUTION GetRenderResolution();
+  virtual bool IsRenderingVideo();
+  virtual bool IsRenderingGuiLayer();
+  virtual bool IsRenderingVideoLayer();
+  virtual bool Supports(EDEINTERLACEMODE mode);
+  virtual bool Supports(EINTERLACEMETHOD method);
+  virtual bool Supports(ESCALINGMETHOD method);
+  virtual bool Supports(ERENDERFEATURE feature);
 
   //CDSPlayer
   virtual void Stop();
@@ -322,5 +336,6 @@ protected:
   bool m_HasVideo;
   bool m_HasAudio;
 
+  CRenderManager m_renderManager;
 };
 

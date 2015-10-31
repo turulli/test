@@ -220,9 +220,8 @@ CDX9AllocatorPresenter::CDX9AllocatorPresenter(HWND hWnd, HRESULT& hr, bool bIsE
   , m_bscShader("contrast_brightness.psh", "ps_2_0")
 {
   g_Windowing.Register(this);
-  g_renderManager.PreInit(RENDERER_DSHOW);
-
-  g_renderManager.RegisterCallback(this);
+  //todo videoplayer
+  //g_renderManager.RegisterCallback(this);
   m_bIsFullscreen = g_dsSettings.IsD3DFullscreen();
 
   if (FAILED(hr))
@@ -301,8 +300,9 @@ CDX9AllocatorPresenter::CDX9AllocatorPresenter(HWND hWnd, HRESULT& hr, bool bIsE
 CDX9AllocatorPresenter::~CDX9AllocatorPresenter()
 {
   g_Windowing.Unregister(this);
-  g_renderManager.UnregisterCallback();
-  g_renderManager.UnInit();
+  //todo videoplayer
+  //g_renderManager.UnregisterCallback();
+
   if (m_bDesktopCompositionDisabled)
   {
     m_bDesktopCompositionDisabled = false;
@@ -1875,7 +1875,7 @@ STDMETHODIMP_(bool) CDX9AllocatorPresenter::Paint(bool fAll)
 {
   CAutoSetEvent autoEvent(&m_drawingIsDone);
 
-  if (!g_renderManager.IsStarted() || m_bPendingResetDevice)
+  if (!g_application.m_pPlayer->IsRenderingVideo() || m_bPendingResetDevice)
     return false;
 
   if (CDSPlayer::PlayerState == DSPLAYER_CLOSING || CDSPlayer::PlayerState == DSPLAYER_CLOSED)
@@ -1913,8 +1913,7 @@ STDMETHODIMP_(bool) CDX9AllocatorPresenter::Paint(bool fAll)
   /*m_pD3DDev->SetRenderTarget(0, m_pVideoSurface[m_nNbDXSurface + 2]);
   hr = m_pD3DDev->ColorFill(m_pVideoSurface[m_nNbDXSurface + 2], NULL, 0);*/
 
-
-  if (g_renderManager.IsConfigured() && !rDstVid.IsRectEmpty())
+  if (g_application.m_pPlayer->IsRenderingVideo() && !rDstVid.IsRectEmpty())
   {
 
     if (m_pVideoTexture[m_nCurSurface])

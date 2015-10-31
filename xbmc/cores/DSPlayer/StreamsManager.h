@@ -208,7 +208,7 @@ public:
   void SetSubfilter(int iStream);
   void SelectBestSubtitle();
   int AddSubtitle(const std::string& subFilePath);
-  void SetAVDelay(float fValue = 0.0f);
+  void SetAVDelay(float fValue = 0.0f, int iDisplayerLatency = 0);
   float GetAVDelay();
   bool SetAudioInterface();
   void resetDelayInterface();

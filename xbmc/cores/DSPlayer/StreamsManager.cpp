@@ -767,14 +767,14 @@ bool CStreamsManager::SetAudioInterface()
   return (m_bIsLavAudio || m_bIsFFDSAudio);
 }
 
-void CStreamsManager::SetAVDelay(float fValue)
+void CStreamsManager::SetAVDelay(float fValue, int iDisplayerLatency)
 {
   //delay float secs to int msecs
   int iValue = round(fValue * 1000.0f);
 
-  //get displaylatency and invert the sign because kodi interface
-  int displayLatency = -(g_renderManager.GetDisplayLatency() * 1000);
-  iValue = iValue + displayLatency;
+  //invert the sign displaylatency because kodi interface
+  iDisplayerLatency = -iDisplayerLatency;
+  iValue = iValue + iDisplayerLatency;
 
   //get delay and invert the sign because kodi interface
   iValue = -iValue;

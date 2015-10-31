@@ -32,7 +32,7 @@
 #include <deque>
 #include "PlatformDefs.h"
 #ifdef HAS_DS_PLAYER
-#include "../Videorenderers/WinDsRenderer.h"
+#include "../DSPlayer/Videorenderers/WinDsRenderer.h"
 #include "../Dsplayer/IPaintCallback.h"
 #endif
 #include "threads/Event.h"
@@ -115,6 +115,9 @@ public:
    * @param orientation
    * @param numbers of kept buffer references
    */
+#if HAS_DS_PLAYER
+  bool Configure(unsigned int width, unsigned int height, unsigned int d_width, unsigned int d_height, float fps, unsigned flags, ERenderFormat format, unsigned extended_format, unsigned int orientation, int buffers = 0);
+#endif
   bool Configure(DVDVideoPicture& picture, float fps, unsigned flags, unsigned int orientation, int buffers = 0);
 
 #ifdef HAS_DS_PLAYER

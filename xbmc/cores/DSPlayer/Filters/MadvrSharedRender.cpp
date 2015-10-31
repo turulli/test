@@ -25,7 +25,6 @@
 #include "Utils/Log.h"
 #include "guilib/GUIWindowManager.h"
 #include "windowing/WindowingFactory.h"
-#include "settings/AdvancedSettings.h"
 
 const DWORD D3DFVF_VID_FRAME_VERTEX = D3DFVF_XYZRHW | D3DFVF_TEX1;
 
@@ -96,7 +95,7 @@ HRESULT CMadvrSharedRender::ForceComplete()
 
 CMadvrSharedRender::CMadvrSharedRender()
 {
-  color_t clearColour = (g_advancedSettings.m_videoBlackBarColour & 0xff) * 0x010101;
+  color_t clearColour = g_Windowing.UseLimitedColor() ? (16 * 0x010101) : 0;
   CD3DHelper::XMStoreColor(m_fColor, clearColour);
   m_bUnderRender = false;
   m_bGuiVisible = false;

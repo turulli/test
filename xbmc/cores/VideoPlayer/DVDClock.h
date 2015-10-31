@@ -84,7 +84,9 @@ public:
   // Allow a different time base (DirectShow for example use a 100 ns time base)
   static void SetTimeBase(int64_t timeBase) { m_timeBase = timeBase; }
   static int64_t GetTimeBase() { return m_timeBase; }
-#endifprotected:
+#endif
+
+protected:
   static void CheckSystemClock();
   static double SystemToAbsolute(int64_t system);
   static int64_t AbsoluteToSystem(double absolute);

@@ -48,7 +48,6 @@ CmadVRAllocatorPresenter::CmadVRAllocatorPresenter(HWND hWnd, HRESULT& hr, CStdS
 {
 
   //Init Variable
-  g_renderManager.PreInit(RENDERER_DSHOW);
   m_exclusiveCallback = ExclusiveCallback;
   m_firstBoot = true;
   m_isEnteringExclusive = false;
@@ -84,7 +83,6 @@ CmadVRAllocatorPresenter::~CmadVRAllocatorPresenter()
   if (Com::SmartQIPtr<IMadVRCommand> pMadVrCmd = m_pDXR)
     pMadVrCmd->SendCommand("restoreDisplayModeNow");
 
-  g_renderManager.UnInit();
   g_advancedSettings.m_guiAlgorithmDirtyRegions = m_kodiGuiDirtyAlgo;
   
   // the order is important here
@@ -128,7 +126,7 @@ void CmadVRAllocatorPresenter::SetResolution()
     && (CSettings::GetInstance().GetInt(CSettings::SETTING_DSPLAYER_CHANGEREFRESHWITH) == ADJUST_REFRESHRATE_WITH_BOTH || CSettings::GetInstance().GetInt(CSettings::SETTING_DSPLAYER_CHANGEREFRESHWITH) == ADJUST_REFRESHRATE_WITH_DSPLAYER)
     && g_graphicsContext.IsFullScreenRoot())
   {
-    RESOLUTION bestRes = g_renderManager.m_pRenderer->ChooseBestMadvrResolution(fps);
+    RESOLUTION bestRes = CResolutionUtils::ChooseBestResolution(fps,m_ScreenSize.cx,false);
     CDSPlayer::SetDsWndVisible(true);
     g_graphicsContext.SetVideoResolution(bestRes);
   }
@@ -274,13 +272,13 @@ HRESULT CmadVRAllocatorPresenter::Render( REFERENCE_TIME rtStart, REFERENCE_TIME
     m_pSubPicQueue->SetFPS(m_fps);
   }
 
-  if (!g_renderManager.IsConfigured())
+  if (!g_application.m_pPlayer->IsRenderingVideo())
   {
     m_NativeVideoSize = GetVideoSize(false);
     m_AspectRatio = GetVideoSize(true);
 
     // Configure Render Manager
-    g_renderManager.Configure(m_NativeVideoSize.cx, m_NativeVideoSize.cy, m_AspectRatio.cx, m_AspectRatio.cy, m_fps, CONF_FLAGS_FULLSCREEN , RENDER_FMT_NONE, 0, 0);
+    g_dsGraph->Configure(m_NativeVideoSize.cx, m_NativeVideoSize.cy, m_AspectRatio.cx, m_AspectRatio.cy, m_fps, CONF_FLAGS_FULLSCREEN , RENDER_FMT_NONE, 0, 0);
     CLog::Log(LOGDEBUG, "%s Render manager configured (FPS: %f) %i %i %i %i", __FUNCTION__, m_fps, m_NativeVideoSize.cx, m_NativeVideoSize.cy, m_AspectRatio.cx, m_AspectRatio.cy);
 
     // Begin Render Kodi 
@@ -294,7 +292,7 @@ HRESULT CmadVRAllocatorPresenter::Render( REFERENCE_TIME rtStart, REFERENCE_TIME
       { 
         double refreshRate;
         pInfo->GetDouble("refreshRate", &refreshRate);
-        g_renderManager.UpdateDisplayLatencyForMadvr(refreshRate);
+        g_dsGraph->UpdateDisplayLatencyForMadvr(refreshRate);
       }
     }
   }

@@ -42,6 +42,7 @@
 #include "windowing/windows/winsystemwin32.h"
 #include "cores/IPlayer.h"
 #include "filesystem/File.h"
+#include "cores/VideoPlayer/VideoRenderers/RenderManager.h"
 
 #include "DSMessage.h"
 
@@ -68,7 +69,7 @@ class CFGManager;
 class CDSGraph
 {
 public:
-  CDSGraph(CDVDClock* pClock, IPlayerCallback& callback);
+  CDSGraph(CDVDClock* pClock, IPlayerCallback& callback, CRenderManager& renderManager);
   virtual ~CDSGraph();
 
   /** Determine if the graph can seek
@@ -157,6 +158,9 @@ public:
 
   Com::SmartPtr<IFilterGraph2> pFilterGraph;
 
+  bool Configure(unsigned int width, unsigned int height, unsigned int d_width, unsigned int d_height, float fps, unsigned flags, ERenderFormat format, unsigned extended_format, unsigned int orientation, int buffers = 0);
+  void UpdateDisplayLatencyForMadvr(float refresh);
+  void NewFrame();
 private:
   //Direct Show Filters
   CFGManager*                           m_pGraphBuilder;
@@ -180,6 +184,7 @@ private:
   int m_iCurrentFrameRefreshCycle;
 
   IPlayerCallback& m_callback;
+  CRenderManager& m_renderManager;
 
   struct SPlayerState
   {

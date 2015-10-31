@@ -27,9 +27,6 @@
 #include "guilib/D3DResource.h"
 #include "RenderFormats.h"
 #include "RenderCapture.h"
-#ifdef HAS_DS_PLAYER
-#include "../VideoRenderers/WinBaseRenderer.h"
-#endif
 #include "settings/VideoSettings.h"
 
 #define ALIGN(value, alignment) (((value)+((alignment)-1))&~((alignment)-1))

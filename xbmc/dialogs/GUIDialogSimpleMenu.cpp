@@ -42,7 +42,7 @@ bool CGUIDialogSimpleMenu::ShowPlaySelection(CFileItem& item)
   /* if asked to resume somewhere, we should not show anything */
 #ifdef HAS_DS_PLAYER
   if ((item.m_lStartOffset || (item.HasVideoInfoTag() && item.GetVideoInfoTag()->m_iBookmarkId > 0))
-  || (GetDefaultPlayer(item) != EPC_DVDPLAYER && g_application.m_eForcedNextPlayer != EPC_DVDPLAYER))
+    || (GetDefaultPlayer(item) != EPC_VideoPlayer && g_application.m_eForcedNextPlayer != EPC_VideoPlayer))
 #else
   if (item.m_lStartOffset || (item.HasVideoInfoTag() && item.GetVideoInfoTag()->m_iBookmarkId > 0))
 #endif
