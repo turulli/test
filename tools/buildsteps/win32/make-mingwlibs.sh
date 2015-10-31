@@ -89,14 +89,14 @@ echo "##### building of ffmpeg dlls done #####"
 echo "##### building libdvd dlls #####"
 cd /xbmc/lib/libdvd/
 runBackgroundProcess "./build-xbmc-win32.sh $MAKECLEAN"
-setfilepath /xbmc/system/players/dvdplayer
+setfilepath /xbmc/system/players/VideoPlayer
 checkfiles libdvdcss-2.dll libdvdnav.dll
 echo "##### building of libdvd dlls done #####"
 
 echo "##### building libmpeg2 dlls #####"
 cd /xbmc/lib/libmpeg2/
 runBackgroundProcess "./make-xbmc-lib-win32.sh $MAKECLEAN"
-setfilepath /xbmc/system/players/dvdplayer
+setfilepath /xbmc/system/players/VideoPlayer
 checkfiles libmpeg2-0.dll
 echo "##### building of libmpeg2 dlls done #####"
 

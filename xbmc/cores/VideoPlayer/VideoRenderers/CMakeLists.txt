@@ -1,0 +1,34 @@
+enable_language(CXX ASM)
+set(CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS} -x assembler-with-cpp" )
+
+set(SOURCES BaseRenderer.cpp
+            OverlayRenderer.cpp
+            OverlayRendererGUI.cpp
+            OverlayRendererUtil.cpp
+            RenderCapture.cpp
+            RenderFlags.cpp
+            RenderManager.cpp)
+
+if(WIN32)
+  list(APPEND SOURCES WinRenderer.cpp
+                      OverlayRendererDX.cpp)
+endif()
+
+if(OPENGL_FOUND)
+  list(APPEND SOURCES OverlayRendererGL.cpp
+                      LinuxRendererGL.cpp)
+endif()
+
+if(GLES_FOUND)
+  list(APPEND SOURCES LinuxRendererGLES.cpp
+                      OverlayRendererGL.cpp)
+
+endif()
+
+if(ARCH MATCHES "arm")
+  list(APPEND SOURCES yuv2rgb.neon.S)
+endif()
+
+
+core_add_library(videorenderers)
+add_dependencies(videorenderers ffmpeg)

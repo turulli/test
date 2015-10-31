@@ -33,7 +33,7 @@
 #include "URL.h"
 #include "guilib/TextureManager.h"
 #include "cores/IPlayer.h"
-#include "cores/dvdplayer/DVDFileInfo.h"
+#include "cores/VideoPlayer/DVDFileInfo.h"
 #include "cores/AudioEngine/AEFactory.h"
 #include "cores/AudioEngine/DSPAddons/ActiveAEDSP.h"
 #include "cores/AudioEngine/Utils/AEUtil.h"
@@ -117,9 +117,6 @@
 #include "filesystem/SFTPFile.h"
 #endif
 #include "PartyModeManager.h"
-#ifdef HAS_VIDEO_PLAYBACK
-#include "cores/VideoRenderers/RenderManager.h"
-#endif
 #include "network/ZeroconfBrowser.h"
 #ifndef TARGET_POSIX
 #include "threads/platform/win/Win32Exception.h"
@@ -987,7 +984,7 @@ bool CApplication::InitDirectoriesOSX()
 
 #if defined(TARGET_DARWIN_IOS)
   std::string fontconfigPath;
-  fontconfigPath = appPath + "/system/players/dvdplayer/etc/fonts/fonts.conf";
+  fontconfigPath = appPath + "/system/players/VideoPlayer/etc/fonts/fonts.conf";
   setenv("FONTCONFIG_FILE", fontconfigPath.c_str(), 0);
 #endif
 
@@ -1509,6 +1506,7 @@ bool CApplication::OnSettingUpdate(CSetting* &setting, const char *oldSettingId,
   }
 #endif
 #if defined(TARGET_ANDROID)
+  // TODO:Handle stf removed
   if (settingId == CSettings::SETTING_VIDEOPLAYER_USESTAGEFRIGHT)
   {
     CSettingBool *usestagefright = (CSettingBool*)setting;
@@ -1645,18 +1643,17 @@ bool CApplication::LoadSkin(const SkinPtr& skin)
 
   bool bPreviousPlayingState=false;
   bool bPreviousRenderingState=false;
-  if (g_application.m_pPlayer->IsPlayingVideo())
+  if (m_pPlayer->IsPlayingVideo())
   {
-    bPreviousPlayingState = !g_application.m_pPlayer->IsPausedPlayback();
+    bPreviousPlayingState = !m_pPlayer->IsPausedPlayback();
     if (bPreviousPlayingState)
-      g_application.m_pPlayer->Pause();
-#ifdef HAS_VIDEO_PLAYBACK
+      m_pPlayer->Pause();
+    m_pPlayer->FlushRenderer();
     if (g_windowManager.GetActiveWindow() == WINDOW_FULLSCREEN_VIDEO)
     {
       g_windowManager.ActivateWindow(WINDOW_HOME);
       bPreviousRenderingState = true;
     }
-#endif
   }
   // close the music and video overlays (they're re-opened automatically later)
   CSingleLock lock(g_graphicsContext);
@@ -1746,10 +1743,10 @@ bool CApplication::LoadSkin(const SkinPtr& skin)
     }
   }
 
-  if (g_application.m_pPlayer->IsPlayingVideo())
+  if (m_pPlayer->IsPlayingVideo())
   {
     if (bPreviousPlayingState)
-      g_application.m_pPlayer->Pause();
+      m_pPlayer->Pause();
     if (bPreviousRenderingState)
       g_windowManager.ActivateWindow(WINDOW_FULLSCREEN_VIDEO);
   }
@@ -1925,7 +1922,7 @@ void CApplication::Render()
     m_bPresentFrame = false;
     if (!extPlayerActive && g_graphicsContext.IsFullScreenVideo() && !m_pPlayer->IsPausedPlayback())
     {
-      m_bPresentFrame = g_renderManager.HasFrame();
+      m_bPresentFrame = m_pPlayer->HasFrame();
       if (vsync_mode == VSYNC_DISABLED)
         vsync = false;
     }
@@ -2023,6 +2020,8 @@ void CApplication::Render()
   // render video layer
   g_windowManager.RenderEx();
 
+  m_pPlayer->AfterRender();
+
   g_Windowing.EndRender();
 #ifdef HAS_DS_PLAYER
   CMadvrCallback::Get()->EndRender();
@@ -2073,14 +2072,11 @@ void CApplication::Render()
 #endif
   if (!extPlayerActive && g_graphicsContext.IsFullScreenVideo() && !m_pPlayer->IsPausedPlayback())
   {
-      g_renderManager.FrameWait(100);
+    m_pPlayer->FrameWait(100);
   }
 
   m_lastFrameTime = XbmcThreads::SystemClockMillis();
   CTimeUtils::UpdateFrameTime(flip, vsync);
-
-  g_renderManager.UpdateResolution();
-  g_renderManager.ManageCaptures();
 }
 
 void CApplication::SetStandAlone(bool value)
@@ -2548,7 +2544,7 @@ void CApplication::OnApplicationMessage(ThreadMessage* pMsg)
     break;
 
   case TMSG_RENDERER_FLUSH:
-    g_renderManager.Flush();
+    m_pPlayer->FlushRenderer();
     break;
 
   case TMSG_HIBERNATE:
@@ -2861,7 +2857,7 @@ void CApplication::FrameMove(bool processEvents, bool processGUI)
 #if defined(TARGET_RASPBERRY_PI) || defined(HAS_IMXVPU)
     // This code reduces rendering fps of the GUI layer when playing videos in fullscreen mode
     // it makes only sense on architectures with multiple layers
-    if (g_graphicsContext.IsFullScreenVideo() && !m_pPlayer->IsPausedPlayback() && g_renderManager.IsVideoLayer())
+    if (g_graphicsContext.IsFullScreenVideo() && !m_pPlayer->IsPausedPlayback() && m_pPlayer->IsRenderingVideoLayer())
       fps = CSettings::GetInstance().GetInt(CSettings::SETTING_VIDEOPLAYER_LIMITGUIUPDATE);
 #endif
 
@@ -2877,6 +2873,8 @@ void CApplication::FrameMove(bool processEvents, bool processGUI)
     }
     g_windowManager.FrameMove();
   }
+
+  m_pPlayer->FrameMove();
 }
 
 
@@ -3536,7 +3534,7 @@ PlayBackRet CApplication::PlayFile(const CFileItem& item, bool bRestart)
   }
 
   // We should restart the player, unless the previous and next tracks are using
-  // one of the players that allows gapless playback (paplayer, dvdplayer)
+  // one of the players that allows gapless playback (paplayer, VideoPlayer)
   m_pPlayer->ClosePlayerGapless(eNewCore);
 
   // now reset play state to starting, since we already stopped the previous playing item if there is.
@@ -3594,8 +3592,8 @@ PlayBackRet CApplication::PlayFile(const CFileItem& item, bool bRestart)
 #ifdef HAS_VIDEO_PLAYBACK
     else if(m_pPlayer->IsPlayingVideo())
     {
-      // if player didn't manange to switch to fullscreen by itself do it here
-      if (options.fullscreen && g_renderManager.IsStarted() &&
+      // if player didn't manage to switch to fullscreen by itself do it here
+      if (options.fullscreen && m_pPlayer->IsRenderingVideo() &&
           g_windowManager.GetActiveWindow() != WINDOW_FULLSCREEN_VIDEO )
        SwitchToFullScreen(true);
     }

@@ -63,7 +63,7 @@ public:
   virtual unsigned int DrawSlice(unsigned char *src[], int stride[], int w, int h, int x, int y) { return 0; };
   virtual void         AddProcessor(DXVA::CProcessor* processor, int64_t id) {};
   virtual void         FlipPage(int source) {};
-  virtual unsigned int PreInit() { return 0; };
+  virtual void         PreInit() {};
   virtual void         UnInit() {};
   virtual void         Reset() {}; /* resets renderer after seek for example */
   virtual bool         IsConfigured() {return false;}

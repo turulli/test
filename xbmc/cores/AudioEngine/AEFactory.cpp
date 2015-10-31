@@ -271,20 +271,20 @@ void CAEFactory::Shutdown()
 }
 
 IAEStream *CAEFactory::MakeStream(enum AEDataFormat dataFormat, unsigned int sampleRate, 
-  unsigned int encodedSampleRate, CAEChannelInfo channelLayout, unsigned int options)
+  unsigned int encodedSampleRate, CAEChannelInfo channelLayout, unsigned int options, IAEClockCallback *clock)
 {
   if(AE)
-    return AE->MakeStream(dataFormat, sampleRate, encodedSampleRate, channelLayout, options);
+    return AE->MakeStream(dataFormat, sampleRate, encodedSampleRate, channelLayout, options, clock);
 
   return NULL;
 }
 
-IAEStream *CAEFactory::FreeStream(IAEStream *stream)
+bool CAEFactory::FreeStream(IAEStream *stream)
 {
   if(AE)
     return AE->FreeStream(stream);
 
-  return NULL;
+  return false;
 }
 
 void CAEFactory::GarbageCollect()
@@ -372,10 +372,10 @@ void CAEFactory::RegisterAudioCallback(IAudioCallback* pCallback)
     AE->RegisterAudioCallback(pCallback);
 }
 
-void CAEFactory::UnregisterAudioCallback()
+void CAEFactory::UnregisterAudioCallback(IAudioCallback* pCallback)
 {
   if (AE)
-    AE->UnregisterAudioCallback();
+    AE->UnregisterAudioCallback(pCallback);
 }
 
 bool CAEFactory::IsSettingVisible(const std::string &condition, const std::string &value, const CSetting *setting, void *data)

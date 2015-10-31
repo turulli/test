@@ -22,7 +22,9 @@
 
 #include <memory>
 #include "threads/SystemClock.h"
+#include "guilib/Resolution.h"
 #include "cores/playercorefactory/PlayerCoreFactory.h"
+#include "cores/IPlayer.h"
 #include "utils/StdString.h"
 
 typedef enum
@@ -41,6 +43,7 @@ namespace PVR
 class CAction;
 class CPlayerOptions;
 class CStreamDetails;
+class CRenderCapture;
 
 struct SPlayerAudioStreamInfo;
 struct SPlayerVideoStreamInfo;
@@ -78,6 +81,27 @@ public:
   PlayBackRet OpenFile(const CFileItem& item, const CPlayerOptions& options);
   void ResetPlayer() { m_eCurrentPlayer = EPC_NONE; }
   void SetPlaySpeed(int iSpeed, bool bApplicationMuted);
+
+  void FrameMove();
+  void FrameWait(int ms);
+  bool HasFrame();
+  void Render(bool clear, uint32_t alpha = 255, bool gui = true);
+  void AfterRender();
+  void FlushRenderer();
+  void SetRenderViewMode(int mode);
+  float GetRenderAspectRatio();
+  RESOLUTION GetRenderResolution();
+  bool IsRenderingVideo();
+  bool IsRenderingGuiLayer();
+  bool IsRenderingVideoLayer();
+  bool Supports(EDEINTERLACEMODE mode);
+  bool Supports(EINTERLACEMETHOD method);
+  bool Supports(ESCALINGMETHOD method);
+  bool Supports(ERENDERFEATURE feature);
+  CRenderCapture *RenderCaptureAlloc();
+  void RenderCapture(CRenderCapture* capture, unsigned int width, unsigned int height, int flags);
+  void RenderCaptureRelease(CRenderCapture* capture);
+  std::string GetRenderVSyncState();
 
   // proxy calls
   void   AddSubtitle(const std::string& strSubPath);

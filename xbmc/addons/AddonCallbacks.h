@@ -24,7 +24,7 @@
 #include "../../addons/library.kodi.guilib/libKODI_guilib.h"
 #include "../../addons/library.kodi.adsp/libKODI_adsp.h"
 #include "../../addons/library.kodi.audioengine/libKODI_audioengine.h"
-#include "cores/dvdplayer/DVDDemuxers/DVDDemuxUtils.h"
+#include "cores/VideoPlayer/DVDDemuxers/DVDDemuxUtils.h"
 #include "addons/include/kodi_adsp_types.h"
 #include "addons/include/kodi_audioengine_types.h"
 #include "addons/include/xbmc_pvr_types.h"
@@ -429,7 +429,7 @@ typedef const unsigned int      (*AudioEngine_Stream_GetSampleRate)(void *addonD
 typedef const unsigned int      (*AudioEngine_Stream_GetEncodedSampleRate)(void *addonData, AEStreamHandle *handle);
 typedef const AEDataFormat      (*AudioEngine_Stream_GetDataFormat)(void *addonData, AEStreamHandle *handle);
 typedef double                  (*AudioEngine_Stream_GetResampleRatio)(void *addonData, AEStreamHandle *handle);
-typedef bool                    (*AudioEngine_Stream_SetResampleRatio)(void *addonData, AEStreamHandle *handle, double Ratio);
+typedef void                    (*AudioEngine_Stream_SetResampleRatio)(void *addonData, AEStreamHandle *handle, double Ratio);
 typedef void                    (*AudioEngine_Stream_Discontinuity)(void *addonData, AEStreamHandle *handle);
 
 typedef struct CB_AudioEngineLib
