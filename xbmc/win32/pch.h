@@ -34,7 +34,10 @@
 #include <comdef.h>
 #define DIRECTINPUT_VERSION 0x0800
 #include "DInput.h"
+#ifdef HAS_DS_PLAYER
+#else
 #include "DSound.h"
+#endif
 #ifdef HAS_DX
 #include "d3d9.h"
 #include "d3d11_1.h"
