@@ -6280,6 +6280,7 @@
     </ClInclude>
     <ClInclude Include="..\..\xbmc\cores\DSPlayer\VideoRenderers\WinDsRenderer.h">
       <Filter>cores\DSPlayer\VideoRenderers</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\xbmc\video\FFmpegVideoDecoder.h" />
     <ClInclude Include="..\..\xbmc\cores\DSPlayer\DSInputStreamPVRManager.h">
       <Filter>cores\DSPlayer</Filter>
