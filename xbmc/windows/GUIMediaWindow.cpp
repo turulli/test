@@ -934,7 +934,11 @@ bool CGUIMediaWindow::OnClick(int iItem)
     }
   }
 
-  if (pItem->m_bIsFolder)
+  if (pItem->m_bIsFolder
+#ifdef HAS_DS_PLAYER
+    && pItem->m_lStartOffset != STARTOFFSET_RESUME
+#endif
+    )
   {
     if ( pItem->m_bIsShareOrDrive )
     {
@@ -1282,13 +1286,19 @@ void CGUIMediaWindow::SetHistoryForPath(const std::string& strDirectory)
 // \brief Override if you want to change the default behavior, what is done
 // when the user clicks on a file.
 // This function is called by OnClick()
+#ifdef HAS_DS_PLAYER
 bool CGUIMediaWindow::OnPlayMedia(int iItem)
+{
+  CFileItemPtr pItem = m_vecItems->Get(iItem);
+  return OnPlayMedia(pItem);
+}
+
+bool CGUIMediaWindow::OnPlayMedia(const CFileItemPtr &pItem)
 {
   // Reset Playlistplayer, playback started now does
   // not use the playlistplayer.
   g_playlistPlayer.Reset();
   g_playlistPlayer.SetCurrentPlaylist(PLAYLIST_NONE);
-  CFileItemPtr pItem=m_vecItems->Get(iItem);
 
   CLog::Log(LOGDEBUG, "%s %s", __FUNCTION__, CURL::GetRedacted(pItem->GetPath()).c_str());
 
@@ -1303,6 +1313,29 @@ bool CGUIMediaWindow::OnPlayMedia(int iItem)
 
   return bResult;
 }
+#else
+bool CGUIMediaWindow::OnPlayMedia(int iItem)
+{
+  // Reset Playlistplayer, playback started now does
+  // not use the playlistplayer.
+  g_playlistPlayer.Reset();
+  g_playlistPlayer.SetCurrentPlaylist(PLAYLIST_NONE);
+  CFileItemPtr pItem = m_vecItems->Get(iItem);
+
+  CLog::Log(LOGDEBUG, "%s %s", __FUNCTION__, CURL::GetRedacted(pItem->GetPath()).c_str());
+
+  bool bResult = false;
+  if (pItem->IsInternetStream() || pItem->IsPlayList())
+    bResult = g_application.PlayMedia(*pItem, m_guiState->GetPlaylist());
+  else
+    bResult = g_application.PlayFile(*pItem) == PLAYBACK_OK;
+
+  if (pItem->m_lStartOffset == STARTOFFSET_RESUME)
+    pItem->m_lStartOffset = 0;
+
+  return bResult;
+}
+#endif
 
 // \brief Override if you want to change the default behavior of what is done
 // when the user clicks on a file in a "folder" with similar files.
