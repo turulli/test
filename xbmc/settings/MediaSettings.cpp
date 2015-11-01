@@ -44,6 +44,13 @@
 #include "video/VideoDatabase.h"
 #include "cores/AudioEngine/DSPAddons/ActiveAEDSP.h"
 
+#ifdef HAS_DS_PLAYER
+#include "cores/DSPlayer/Dialogs/GUIDialogDSRules.h"
+#include "cores/DSPlayer/Dialogs/GUIDialogDSFilters.h"
+#include "cores/DSPlayer/Dialogs/GUIDialogDSPlayercoreFactory.h"
+#include "MadvrCallback.h"
+#include "GraphFilters.h"
+#endif
 using namespace KODI::MESSAGING;
 
 using KODI::MESSAGING::HELPERS::DialogResponse;
@@ -167,6 +174,113 @@ bool CMediaSettings::Load(const TiXmlNode *settings)
     }
   }
 
+#ifdef HAS_DS_PLAYER
+  // madvr settings
+  pElement = settings->FirstChildElement("defaultmadvrsettings");
+  if (pElement != NULL)
+  {
+    if (!XMLUtils::GetInt(pElement, "chromaupscaling", m_defaultMadvrSettings.m_ChromaUpscaling))
+      m_defaultMadvrSettings.m_ChromaUpscaling = MADVR_DEFAULT_CHROMAUP;
+    XMLUtils::GetBoolean(pElement, "chromaantiring", m_defaultMadvrSettings.m_ChromaAntiRing);
+    XMLUtils::GetBoolean(pElement, "chromasuperres", m_defaultMadvrSettings.m_ChromaSuperRes);
+    if (!XMLUtils::GetInt(pElement, "chromasuperrespasses", m_defaultMadvrSettings.m_ChromaSuperResPasses))
+      m_defaultMadvrSettings.m_ChromaSuperResPasses = MADVR_DEFAULT_CHROMAUP_SUPERRESPASSES;
+    if (!XMLUtils::GetFloat(pElement, "cchromasuperresstrength", m_defaultMadvrSettings.m_ChromaSuperResStrength))
+      m_defaultMadvrSettings.m_ChromaSuperResStrength = MADVR_DEFAULT_CHROMAUP_SUPERRESSTRENGTH;
+    if (!XMLUtils::GetFloat(pElement, "chromaupscalingsoftness", m_defaultMadvrSettings.m_ChromaSuperResSoftness))
+      m_defaultMadvrSettings.m_ChromaSuperResSoftness = MADVR_DEFAULT_CHROMAUP_SUPERRESSOFTNESS;
+
+    if (!XMLUtils::GetInt(pElement, "imageupscaling", m_defaultMadvrSettings.m_ImageUpscaling))
+      m_defaultMadvrSettings.m_ImageUpscaling = MADVR_DEFAULT_LUMAUP;
+    XMLUtils::GetBoolean(pElement, "imageupantiring", m_defaultMadvrSettings.m_ImageUpAntiRing);
+    XMLUtils::GetBoolean(pElement, "imageuplinear", m_defaultMadvrSettings.m_ImageUpLinear);
+
+    if (!XMLUtils::GetInt(pElement, "imagedownscaling", m_defaultMadvrSettings.m_ImageDownscaling))
+      m_defaultMadvrSettings.m_ImageDownscaling = MADVR_DEFAULT_LUMADOWN;
+    XMLUtils::GetBoolean(pElement, "imagedownantiring", m_defaultMadvrSettings.m_ImageDownAntiRing);
+    XMLUtils::GetBoolean(pElement, "imagedownlinear", m_defaultMadvrSettings.m_ImageDownLinear);
+
+    if (!XMLUtils::GetInt(pElement, "imagedoubleluma", m_defaultMadvrSettings.m_ImageDoubleLuma))
+      m_defaultMadvrSettings.m_ImageDoubleLuma = -1;
+    if (!XMLUtils::GetInt(pElement, "imagedoublechroma", m_defaultMadvrSettings.m_ImageDoubleChroma))
+      m_defaultMadvrSettings.m_ImageDoubleChroma = -1;
+    if (!XMLUtils::GetInt(pElement, "imagequadrupleluma", m_defaultMadvrSettings.m_ImageQuadrupleLuma))
+      m_defaultMadvrSettings.m_ImageQuadrupleLuma = -1;
+    if (!XMLUtils::GetInt(pElement, "imagequadruplechroma", m_defaultMadvrSettings.m_ImageQuadrupleChroma))
+      m_defaultMadvrSettings.m_ImageQuadrupleChroma = -1;
+
+    if (!XMLUtils::GetInt(pElement, "imagedoublelumafactor", m_defaultMadvrSettings.m_ImageDoubleLumaFactor))
+      m_defaultMadvrSettings.m_ImageDoubleLumaFactor = MADVR_DEFAULT_DOUBLEFACTOR;
+    if (!XMLUtils::GetInt(pElement, "imagedoublechromafactor", m_defaultMadvrSettings.m_ImageDoubleChromaFactor))
+      m_defaultMadvrSettings.m_ImageDoubleChromaFactor = MADVR_DEFAULT_DOUBLEFACTOR;
+    if (!XMLUtils::GetInt(pElement, "imagequadruplelumafactor", m_defaultMadvrSettings.m_ImageQuadrupleLumaFactor))
+      m_defaultMadvrSettings.m_ImageQuadrupleLumaFactor = MADVR_DEFAULT_QUADRUPLEFACTOR;
+    if (!XMLUtils::GetInt(pElement, "imagequadruplechromafactor", m_defaultMadvrSettings.m_ImageQuadrupleChromaFactor))
+      m_defaultMadvrSettings.m_ImageQuadrupleChromaFactor = MADVR_DEFAULT_QUADRUPLEFACTOR;
+
+    if (!XMLUtils::GetInt(pElement, "deintactive", m_defaultMadvrSettings.m_deintactive))
+      m_defaultMadvrSettings.m_deintactive = MADVR_DEFAULT_DEINTACTIVE;
+    if (!XMLUtils::GetInt(pElement, "deintforce", m_defaultMadvrSettings.m_deintforce))
+      m_defaultMadvrSettings.m_deintforce = MADVR_DEFAULT_DEINTFORCE;
+    XMLUtils::GetBoolean(pElement, "deintlookpixels", m_defaultMadvrSettings.m_deintlookpixels);
+
+    if (!XMLUtils::GetInt(pElement, "smoothmotion", m_defaultMadvrSettings.m_smoothMotion))
+      m_defaultMadvrSettings.m_smoothMotion = -1;
+    if (!XMLUtils::GetInt(pElement, "dithering", m_defaultMadvrSettings.m_dithering))
+      m_defaultMadvrSettings.m_dithering = MADVR_DEFAULT_DITHERING;
+    XMLUtils::GetBoolean(pElement, "ditheringcolorednoise", m_defaultMadvrSettings.m_ditheringColoredNoise);
+    XMLUtils::GetBoolean(pElement, "ditheringeveryframe", m_defaultMadvrSettings.m_ditheringEveryFrame);
+
+    XMLUtils::GetBoolean(pElement, "deband", m_defaultMadvrSettings.m_deband);
+    if (!XMLUtils::GetInt(pElement, "debandlevel", m_defaultMadvrSettings.m_debandLevel))
+      m_defaultMadvrSettings.m_debandLevel = MADVR_DEFAULT_DEBAND_LEVEL;
+    if (!XMLUtils::GetInt(pElement, "debandfadelevel", m_defaultMadvrSettings.m_debandFadeLevel))
+      m_defaultMadvrSettings.m_debandFadeLevel = MADVR_DEFAULT_DEBAND_FADELEVEL;
+
+    XMLUtils::GetBoolean(pElement, "finesharp", m_defaultMadvrSettings.m_fineSharp);
+    if (!XMLUtils::GetFloat(pElement, "finesharpstrength", m_defaultMadvrSettings.m_fineSharpStrength))
+      m_defaultMadvrSettings.m_fineSharpStrength = MADVR_DEFAULT_FINESHARPSTRENGTH;
+    XMLUtils::GetBoolean(pElement, "lumasharpen", m_defaultMadvrSettings.m_lumaSharpen);
+    if (!XMLUtils::GetFloat(pElement, "lumasharpenstrength", m_defaultMadvrSettings.m_lumaSharpenStrength))
+      m_defaultMadvrSettings.m_lumaSharpenStrength = MADVR_DEFAULT_LUMASHARPENSTRENGTH;
+    if (!XMLUtils::GetFloat(pElement, "lumasharpenclamp", m_defaultMadvrSettings.m_lumaSharpenClamp))
+      m_defaultMadvrSettings.m_lumaSharpenClamp = MADVR_DEFAULT_LUMASHARPENCLAMP;
+    if (!XMLUtils::GetFloat(pElement, "lumasharpenradius", m_defaultMadvrSettings.m_lumaSharpenRadius))
+      m_defaultMadvrSettings.m_lumaSharpenRadius = MADVR_DEFAULT_LUMASHARPENRADIUS;
+    XMLUtils::GetBoolean(pElement, "adaptivesharpen", m_defaultMadvrSettings.m_adaptiveSharpen);
+    if (!XMLUtils::GetFloat(pElement, "adaptivesharpenstrength", m_defaultMadvrSettings.m_adaptiveSharpenStrength))
+      m_defaultMadvrSettings.m_adaptiveSharpenStrength = MADVR_DEFAULT_ADAPTIVESHARPENSTRENGTH;
+
+    if (!XMLUtils::GetInt(pElement, "nosmallscaling", m_defaultMadvrSettings.m_noSmallScaling))
+      m_defaultMadvrSettings.m_noSmallScaling = -1;
+    if (!XMLUtils::GetInt(pElement, "movesubs", m_defaultMadvrSettings.m_moveSubs))
+      m_defaultMadvrSettings.m_moveSubs = 0;
+
+    XMLUtils::GetBoolean(pElement, "upreffinesharp", m_defaultMadvrSettings.m_UpRefFineSharp);
+    if (!XMLUtils::GetFloat(pElement, "upreffinesharpstrength", m_defaultMadvrSettings.m_UpRefFineSharpStrength))
+      m_defaultMadvrSettings.m_UpRefFineSharpStrength = MADVR_DEFAULT_UPFINESHARPSTRENGTH;
+    XMLUtils::GetBoolean(pElement, "upreflumasharpen", m_defaultMadvrSettings.m_UpRefLumaSharpen);
+    if (!XMLUtils::GetFloat(pElement, "upreflumasharpenstrength", m_defaultMadvrSettings.m_UpRefLumaSharpenStrength))
+      m_defaultMadvrSettings.m_UpRefLumaSharpenStrength = MADVR_DEFAULT_UPLUMASHARPENSTRENGTH;
+    if (!XMLUtils::GetFloat(pElement, "upreflumasharpenclamp", m_defaultMadvrSettings.m_UpRefLumaSharpenClamp))
+      m_defaultMadvrSettings.m_UpRefLumaSharpenClamp = MADVR_DEFAULT_UPLUMASHARPENCLAMP;
+    if (!XMLUtils::GetFloat(pElement, "upreflumasharpenradius", m_defaultMadvrSettings.m_UpRefLumaSharpenRadius))
+      m_defaultMadvrSettings.m_UpRefLumaSharpenRadius = MADVR_DEFAULT_UPLUMASHARPENRADIUS;
+    XMLUtils::GetBoolean(pElement, "uprefadaptivesharpen", m_defaultMadvrSettings.m_UpRefAdaptiveSharpen);
+    if (!XMLUtils::GetFloat(pElement, "uprefadaptivesharpenstrength", m_defaultMadvrSettings.m_UpRefAdaptiveSharpenStrength))
+      m_defaultMadvrSettings.m_UpRefAdaptiveSharpenStrength = MADVR_DEFAULT_UPADAPTIVESHARPENSTRENGTH;
+    XMLUtils::GetBoolean(pElement, "superres", m_defaultMadvrSettings.m_superRes);
+    if (!XMLUtils::GetFloat(pElement, "superresstrength", m_defaultMadvrSettings.m_superResStrength))
+      m_defaultMadvrSettings.m_superResStrength = MADVR_DEFAULT_SUPERRESSTRENGTH;
+    if (!XMLUtils::GetFloat(pElement, "superressharpness", m_defaultMadvrSettings.m_superResSharpness))
+      m_defaultMadvrSettings.m_superResSharpness = MADVR_DEFAULT_SUPERRESSHARPNESS;
+    if (!XMLUtils::GetFloat(pElement, "superresradius", m_defaultMadvrSettings.m_superResRadius))
+      m_defaultMadvrSettings.m_superResRadius = MADVR_DEFAULT_SUPERRESRADIUS;
+
+    XMLUtils::GetBoolean(pElement, "superreslinear", m_defaultMadvrSettings.m_superResLinear);
+    XMLUtils::GetBoolean(pElement, "superresfirst", m_defaultMadvrSettings.m_superResFirst);
+  }
+#endif
   // mymusic settings
   pElement = settings->FirstChildElement("mymusic");
   if (pElement != NULL)
@@ -267,6 +381,81 @@ bool CMediaSettings::Save(TiXmlNode *settings) const
     }
   }
 
+#ifdef HAS_DS_PLAYER
+  //madvr settings
+  TiXmlElement madvrSettingsNode("defaultmadvrsettings");
+  pNode = settings->InsertEndChild(madvrSettingsNode);
+  if (pNode == NULL)
+    return false;
+
+  XMLUtils::SetInt(pNode, "chromaupscaling", m_defaultMadvrSettings.m_ChromaUpscaling);
+  XMLUtils::SetBoolean(pNode, "chromaantiring", m_defaultMadvrSettings.m_ChromaAntiRing);
+  XMLUtils::SetBoolean(pNode, "chromasuperres", m_defaultMadvrSettings.m_ChromaSuperRes);
+  XMLUtils::SetInt(pNode, "chromasuperrespasses", m_defaultMadvrSettings.m_ChromaSuperResPasses);
+  XMLUtils::SetFloat(pNode, "chromasuperresstrength", m_defaultMadvrSettings.m_ChromaSuperResStrength);
+  XMLUtils::SetFloat(pNode, "chromasuperressoftness", m_defaultMadvrSettings.m_ChromaSuperResSoftness);
+  XMLUtils::SetInt(pNode, "imageupscaling", m_defaultMadvrSettings.m_ImageUpscaling);
+  XMLUtils::SetBoolean(pNode, "imageupantiring", m_defaultMadvrSettings.m_ImageUpAntiRing);
+  XMLUtils::SetBoolean(pNode, "imageuplinear", m_defaultMadvrSettings.m_ImageUpLinear);
+  XMLUtils::SetInt(pNode, "imagedownscaling", m_defaultMadvrSettings.m_ImageDownscaling);
+  XMLUtils::SetBoolean(pNode, "imagedownantiring", m_defaultMadvrSettings.m_ImageDownAntiRing);
+  XMLUtils::SetBoolean(pNode, "imagedownlinear", m_defaultMadvrSettings.m_ImageDownLinear);
+
+  XMLUtils::SetInt(pNode, "imagedoubleluma", m_defaultMadvrSettings.m_ImageDoubleLuma);
+  XMLUtils::SetInt(pNode, "imagedoublechroma", m_defaultMadvrSettings.m_ImageDoubleChroma);
+  XMLUtils::SetInt(pNode, "imagequadrupleluma", m_defaultMadvrSettings.m_ImageQuadrupleLuma);
+  XMLUtils::SetInt(pNode, "imagequadruplechroma", m_defaultMadvrSettings.m_ImageQuadrupleChroma);
+
+  XMLUtils::SetInt(pNode, "imagedoublelumafactor", m_defaultMadvrSettings.m_ImageDoubleLumaFactor);
+  XMLUtils::SetInt(pNode, "imagedoublechromafactor", m_defaultMadvrSettings.m_ImageDoubleChromaFactor);
+  XMLUtils::SetInt(pNode, "imagequadruplelumafactor", m_defaultMadvrSettings.m_ImageQuadrupleLumaFactor);
+  XMLUtils::SetInt(pNode, "imagequadruplechromafactor", m_defaultMadvrSettings.m_ImageQuadrupleChromaFactor);
+
+  XMLUtils::SetInt(pNode, "deintactive", m_defaultMadvrSettings.m_deintactive);
+  XMLUtils::SetInt(pNode, "deintforce", m_defaultMadvrSettings.m_deintforce);
+  XMLUtils::SetBoolean(pNode, "deintlookpixels", m_defaultMadvrSettings.m_deintlookpixels);
+
+  XMLUtils::SetInt(pNode, "smoothmotion", m_defaultMadvrSettings.m_smoothMotion);
+
+  XMLUtils::SetInt(pNode, "dithering", m_defaultMadvrSettings.m_dithering);
+  XMLUtils::SetBoolean(pNode, "ditheringcolorednoise", m_defaultMadvrSettings.m_ditheringColoredNoise);
+  XMLUtils::SetBoolean(pNode, "ditheringeveryframe", m_defaultMadvrSettings.m_ditheringEveryFrame);
+
+  XMLUtils::SetBoolean(pNode, "deband", m_defaultMadvrSettings.m_deband); 
+  XMLUtils::SetInt(pNode, "debandlevel", m_defaultMadvrSettings.m_debandLevel);
+  XMLUtils::SetInt(pNode, "debandfadelevel", m_defaultMadvrSettings.m_debandFadeLevel);
+
+  XMLUtils::SetBoolean(pNode, "finesharp", m_defaultMadvrSettings.m_fineSharp);
+  XMLUtils::SetFloat(pNode, "finesharpstrength", m_defaultMadvrSettings.m_fineSharpStrength);
+  XMLUtils::SetBoolean(pNode, "lumasharpen", m_defaultMadvrSettings.m_lumaSharpen);
+  XMLUtils::SetFloat(pNode, "lumasharpenstrength", m_defaultMadvrSettings.m_lumaSharpenStrength);
+  XMLUtils::SetFloat(pNode, "lumasharpenclamp", m_defaultMadvrSettings.m_lumaSharpenClamp);
+  XMLUtils::SetFloat(pNode, "lumasharpenradius", m_defaultMadvrSettings.m_lumaSharpenRadius);
+  XMLUtils::SetBoolean(pNode, "adpativesharpen", m_defaultMadvrSettings.m_adaptiveSharpen);
+  XMLUtils::SetFloat(pNode, "adpativesharpenstrength", m_defaultMadvrSettings.m_adaptiveSharpenStrength);
+
+  XMLUtils::SetInt(pNode, "nosmallscaling", m_defaultMadvrSettings.m_noSmallScaling);
+  XMLUtils::SetInt(pNode, "movesubs", m_defaultMadvrSettings.m_moveSubs);
+
+  XMLUtils::SetBoolean(pNode, "upreffinesharp", m_defaultMadvrSettings.m_UpRefFineSharp);
+  XMLUtils::SetFloat(pNode, "upreffinesharpstrength", m_defaultMadvrSettings.m_UpRefFineSharpStrength);
+  XMLUtils::SetBoolean(pNode, "upreflumasharpen", m_defaultMadvrSettings.m_UpRefLumaSharpen);
+  XMLUtils::SetFloat(pNode, "upreflumasharpenstrength", m_defaultMadvrSettings.m_UpRefLumaSharpenStrength);
+  XMLUtils::SetFloat(pNode, "upreflumasharpenclamp", m_defaultMadvrSettings.m_UpRefLumaSharpenClamp);
+  XMLUtils::SetFloat(pNode, "upreflumasharpenradius", m_defaultMadvrSettings.m_UpRefLumaSharpenRadius);
+  XMLUtils::SetBoolean(pNode, "uprefadpativesharpen", m_defaultMadvrSettings.m_UpRefAdaptiveSharpen);
+  XMLUtils::SetFloat(pNode, "uprefadpativesharpenstrength", m_defaultMadvrSettings.m_UpRefAdaptiveSharpenStrength);
+  XMLUtils::SetBoolean(pNode, "superres", m_defaultMadvrSettings.m_superRes);
+  XMLUtils::SetFloat(pNode, "superresstrength", m_defaultMadvrSettings.m_superResStrength);
+  XMLUtils::SetFloat(pNode, "superressharpness", m_defaultMadvrSettings.m_superResSharpness);
+  XMLUtils::SetFloat(pNode, "superresradius", m_defaultMadvrSettings.m_superResRadius);
+
+  XMLUtils::SetBoolean(pNode, "superreslinear", m_defaultMadvrSettings.m_superResLinear);
+  XMLUtils::SetBoolean(pNode, "refineonce", !m_defaultMadvrSettings.m_refineOnce);
+  XMLUtils::SetBoolean(pNode, "superresfirst", m_defaultMadvrSettings.m_superResFirst);
+  
+#endif
+
   // mymusic
   pNode = settings->FirstChild("mymusic");
   if (pNode == NULL)
@@ -348,6 +537,22 @@ void CMediaSettings::OnSettingAction(const CSetting *setting)
   }
   else if (settingId == CSettings::SETTING_VIDEOLIBRARY_EXPORT)
     CBuiltins::GetInstance().Execute("exportlibrary(video)");
+#ifdef HAS_DS_PLAYER
+  else if (settingId == "dsplayer.rules")
+    CGUIDialogDSRules::ShowDSRulesList();
+  else if (settingId == "dsplayer.lavsplitter")
+    CGraphFilters::Get()->ShowInternalPPage(LAVSPLITTER, false);
+  else if (settingId == "dsplayer.lavvideo")
+    CGraphFilters::Get()->ShowInternalPPage(LAVVIDEO, false);
+  else if (settingId == "dsplayer.lavaudio")
+    CGraphFilters::Get()->ShowInternalPPage(LAVAUDIO, false);
+  else if (settingId == "dsplayer.xysubfilter")
+    CGraphFilters::Get()->ShowInternalPPage(XYSUBFILTER, true);
+  else if (settingId == "dsplayer.filters")
+    CGUIDialogDSFilters::ShowDSFiltersList();
+  else if (settingId == "dsplayer.playercore")
+    CGUIDialogDSPlayercoreFactory::ShowDSPlayercoreFactory();
+#endif
   else if (settingId == CSettings::SETTING_VIDEOLIBRARY_IMPORT)
   {
     std::string path;
