@@ -31,6 +31,10 @@
 #include "OverlayRenderer.h"
 #include <deque>
 #include "PlatformDefs.h"
+#ifdef HAS_DS_PLAYER
+#include "../DSPlayer/Videorenderers/WinDsRenderer.h"
+#include "../Dsplayer/IPaintCallback.h"
+#endif
 #include "threads/Event.h"
 #include "DVDClock.h"
 
@@ -42,6 +46,9 @@ namespace VDPAU { class CVdpauRenderPicture; }
 struct DVDVideoPicture;
 
 #define ERRORBUFFSIZE 30
+#ifdef HAS_DS_PLAYER
+class IPaintCallback;
+#endif
 
 class CWinRenderer;
 class CMMALRenderer;
@@ -70,7 +77,11 @@ public:
   void UpdateResolution();
   void TriggerUpdateResolution(float fps, int width, int flags);
   void SetViewMode(int iViewMode);
+#ifdef HAS_DS_PLAYER
+  void PreInit(RENDERERTYPE rendtype = RENDERER_NORMAL);
+#else
   void PreInit();
+#endif 
   void UnInit();
   bool Flush();
   bool IsConfigured() const;
@@ -79,6 +90,9 @@ public:
   void ReleaseRenderCapture(CRenderCapture* capture);
   void Capture(CRenderCapture *capture, unsigned int width, unsigned int height, int flags);
   void ManageCaptures();
+#ifdef HAS_DS_PLAYER
+  void NewFrame();
+#endif
 
   // Functions called from GUI
   bool Supports(ERENDERFEATURE feature);
@@ -101,7 +115,33 @@ public:
    * @param orientation
    * @param numbers of kept buffer references
    */
+#if HAS_DS_PLAYER
+  bool Configure(unsigned int width, unsigned int height, unsigned int d_width, unsigned int d_height, float fps, unsigned flags, ERenderFormat format, unsigned extended_format, unsigned int orientation, int buffers = 0);
+#endif
   bool Configure(DVDVideoPicture& picture, float fps, unsigned flags, unsigned int orientation, int buffers = 0);
+
+#ifdef HAS_DS_PLAYER
+  //todo videoplayer
+  /*
+  inline void RegisterCallback(IPaintCallback *callback)
+  {
+    CSharedLock lock(m_sharedSection);
+    if (m_pRenderer)
+      m_pRenderer->RegisterCallback(callback);
+  }
+  inline void UnregisterCallback()
+  {
+    CSharedLock lock(m_sharedSection);
+    if (m_pRenderer)
+      m_pRenderer->UnregisterCallback();
+  }
+  inline void OnAfterPresent()
+  {
+    if (m_pRenderer)
+      m_pRenderer->OnAfterPresent();
+  }
+  */
+#endif
 
   int AddVideoPicture(DVDVideoPicture& picture);
 
@@ -134,6 +174,9 @@ public:
   // Get renderer info, can be called before configure
   CRenderInfo GetRenderInfo();
 
+#ifdef HAS_DS_PLAYER
+  void UpdateDisplayLatencyForMadvr(float fps);
+#endif
   /**
    * If player uses buffering it has to wait for a buffer before it calls
    * AddVideoPicture and AddOverlay. It waits for max 50 ms before it returns -1
@@ -178,6 +221,10 @@ protected:
   int m_waitForBufferCount;
   int m_rendermethod;
   bool m_renderedOverlay;
+
+#ifdef HAS_DS_PLAYER
+  RENDERERTYPE m_pRendererType;
+#endif
 
   enum EPRESENTSTEP
   {

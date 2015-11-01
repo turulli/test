@@ -139,7 +139,12 @@ struct DXVABuffer : SVideoBuffer
   unsigned int frameIdx;
 };
 
+//todo videoplayer
+#ifdef HAS_DS_PLAYER0
+class CWinRenderer : public CWinBaseRenderer
+#else
 class CWinRenderer : public CBaseRenderer
+#endif
 {
 public:
   CWinRenderer();

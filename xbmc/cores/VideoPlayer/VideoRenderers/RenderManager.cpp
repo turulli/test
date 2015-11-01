@@ -157,6 +157,9 @@ CRenderManager::CRenderManager(CDVDClock &clock) : m_overlays(this), m_dvdClock(
   m_bTriggerUpdateResolution = false;
   m_hasCaptures = false;
   m_displayLatency = 0.0f;
+#ifdef HAS_DS_PLAYER
+  m_pRendererType = RENDERER_UNINIT;
+#endif
   m_presentcorr = 0.0;
   m_presenterr = 0.0;
   memset(&m_errorbuff, 0, ERRORBUFFSIZE);
@@ -191,7 +194,11 @@ float CRenderManager::GetAspectRatio()
 /* These is based on CurrentHostCounter() */
 double CRenderManager::GetPresentTime()
 {
+#ifdef HAS_DS_PLAYER
+  return CDVDClock::GetAbsoluteClock(false) / CDVDClock::GetTimeBase();
+#else
   return CDVDClock::GetAbsoluteClock(false) / DVD_TIME_BASE;
+#endif
 }
 
 static double wrap(double x, double minimum, double maximum)
@@ -214,19 +221,31 @@ void CRenderManager::WaitPresentTime(double presenttime)
   if(fps <= 0)
   {
     /* smooth video not enabled */
+#ifdef HAS_DS_PLAYER
+    CDVDClock::WaitAbsoluteClock(presenttime * CDVDClock::GetTimeBase());
+#else
     CDVDClock::WaitAbsoluteClock(presenttime * DVD_TIME_BASE);
+#endif
     return;
   }
 
   if(m_dvdClock.GetSpeedAdjust() != 0.0)
   {
+#ifdef HAS_DS_PLAYER
+    CDVDClock::WaitAbsoluteClock(presenttime * CDVDClock::GetTimeBase());
+#else
     CDVDClock::WaitAbsoluteClock(presenttime * DVD_TIME_BASE);
+#endif
     m_presenterr = 0;
     m_presentcorr = 0;
     return;
   }
 
+#ifdef HAS_DS_PLAYER
+  double clock     = CDVDClock::WaitAbsoluteClock(presenttime * CDVDClock::GetTimeBase()) / CDVDClock::GetTimeBase();
+#else
   double clock     = CDVDClock::WaitAbsoluteClock(presenttime * DVD_TIME_BASE) / DVD_TIME_BASE;
+#endif
   double target    = 0.5;
   double error     = ( clock - presenttime ) / frametime - target;
 
@@ -273,6 +292,83 @@ std::string CRenderManager::GetVSyncState()
                                          ,     MathUtils::round_int(avgerror      * 100)
                                          , abs(MathUtils::round_int(m_presenterr  * 100)));
   return state;
+}
+
+bool CRenderManager::Configure(unsigned int width, unsigned int height, unsigned int d_width, unsigned int d_height, float fps, unsigned flags, ERenderFormat format, unsigned extended_format, unsigned int orientation, int buffers)
+{
+  // check if something has changed
+  {
+    float config_framerate = fps;
+    float render_framerate = g_graphicsContext.GetFPS();
+    if (CSettings::GetInstance().GetInt(CSettings::SETTING_VIDEOPLAYER_ADJUSTREFRESHRATE) == ADJUST_REFRESHRATE_OFF)
+      render_framerate = config_framerate;
+    bool changerefresh = (fps != 0) &&
+      (m_fps == 0.0 || fmod(m_fps, fps) != 0.0) &&
+      (render_framerate != config_framerate);
+
+    CSharedLock lock(m_sharedSection);
+    if (m_width == width &&
+      m_height == height &&
+      m_dwidth == d_width &&
+      m_dheight == d_height &&
+      !changerefresh &&
+      (m_flags & ~CONF_FLAGS_FULLSCREEN) == (flags & ~CONF_FLAGS_FULLSCREEN) &&
+      m_format == format &&
+      m_extended_format == extended_format &&
+      m_orientation == orientation &&
+      m_NumberBuffers == buffers &&
+      m_pRenderer != NULL)
+      return true;
+  }
+
+  std::string formatstr = GetRenderFormatName(format);
+  CLog::Log(LOGDEBUG, "CRenderManager::Configure - change configuration. %dx%d. display: %dx%d. framerate: %4.2f. format: %s", width, height, d_width,d_height, fps, formatstr.c_str());
+
+  // make sure any queued frame was fully presented
+  {
+    CSingleLock lock(m_presentlock);
+    XbmcThreads::EndTime endtime(5000);
+    while (m_presentstep != PRESENT_IDLE && m_presentstep != PRESENT_READY)
+    {
+      if (endtime.IsTimePast())
+      {
+        CLog::Log(LOGWARNING, "CRenderManager::Configure - timeout waiting for state");
+        return false;
+      }
+      m_presentevent.wait(lock, endtime.MillisLeft());
+    }
+  }
+
+  {
+    CExclusiveLock lock(m_sharedSection);
+    m_width = width;
+    m_height = height;
+    m_dwidth = d_width;
+    m_dheight = d_height;
+    m_fps = fps;
+    m_flags = flags;
+    m_format = format;
+    m_extended_format = extended_format;
+    m_orientation = orientation;
+    m_NumberBuffers = buffers;
+    m_renderState = STATE_CONFIGURING;
+    m_stateEvent.Reset();
+  }
+
+  if (!m_stateEvent.WaitMSec(1000))
+  {
+    CLog::Log(LOGWARNING, "CRenderManager::Configure - timeout waiting for configure");
+    return false;
+  }
+
+  CSharedLock lock(m_sharedSection);
+  if (m_renderState != STATE_CONFIGURED)
+  {
+    CLog::Log(LOGWARNING, "CRenderManager::Configure - failed to configure");
+    return false;
+  }
+
+  return true;
 }
 
 bool CRenderManager::Configure(DVDVideoPicture& picture, float fps, unsigned flags, unsigned int orientation, int buffers)
@@ -436,6 +532,17 @@ void CRenderManager::Update()
     m_pRenderer->Update();
 }
 
+#ifdef HAS_DS_PLAYER
+void CRenderManager::NewFrame()
+{
+  {
+    CSingleLock lock2(m_presentlock);
+    m_presentstep = PRESENT_READY;
+  }
+  m_presentevent.notifyAll();
+}
+#endif
+
 void CRenderManager::FrameWait(int ms)
 {
   XbmcThreads::EndTime timeout(ms);
@@ -556,7 +663,11 @@ void CRenderManager::FrameFinish()
   }
 }
 
+#ifdef HAS_DS_PLAYER
+void CRenderManager::PreInit(RENDERERTYPE rendtype)
+#else
 void CRenderManager::PreInit()
+#endif
 {
   if (!g_application.IsCurrentThread())
   {
@@ -571,9 +682,18 @@ void CRenderManager::PreInit()
   m_errorindex  = 0;
   memset(m_errorbuff, 0, sizeof(m_errorbuff));
 
+#ifdef HAS_DS_PLAYER
+  if(m_pRenderer && rendtype != m_pRendererType)
+  {
+    SAFE_DELETE(m_pRenderer);
+  }
+#endif
   if (!m_pRenderer)
   {
     m_format = RENDER_FMT_NONE;
+#ifdef HAS_DS_PLAYER
+    m_pRendererType = rendtype;
+#endif
     CreateRenderer();
   }
 
@@ -716,6 +836,13 @@ void CRenderManager::CreateRenderer()
       m_pRenderer = new CWinRenderer();
 #endif
     }
+#ifdef HAS_DS_PLAYER
+    else if (m_format == RENDER_FMT_NONE)
+    {
+      m_pRenderer = new CWinDsRenderer();
+    }
+#endif
+
 #if defined(HAS_MMAL)
     if (!m_pRenderer)
       m_pRenderer = new CMMALRenderer;
@@ -1109,6 +1236,16 @@ void CRenderManager::PresentBlend(bool clear, DWORD flags, DWORD alpha)
   }
 }
 
+#ifdef HAS_DS_PLAYER
+void CRenderManager::UpdateDisplayLatencyForMadvr(float fps)
+{
+  float refresh = fps;
+  m_displayLatency = (double)g_advancedSettings.GetDisplayLatency(refresh);
+  CLog::Log(LOGDEBUG, "CRenderManager::UpdateDisplayLatencyForMadvr - Latency set to %1.0f msec", m_displayLatency * 1000.0f);
+  g_application.m_pPlayer->SetAVDelay(CMediaSettings::GetInstance().GetCurrentVideoSettings().m_AudioDelay);
+}
+#endif
+
 void CRenderManager::UpdateDisplayLatency()
 {
   float refresh = g_graphicsContext.GetFPS();
@@ -1116,6 +1253,10 @@ void CRenderManager::UpdateDisplayLatency()
     refresh = 0; // No idea about refresh rate when windowed, just get the default latency
   m_displayLatency = (double) g_advancedSettings.GetDisplayLatency(refresh);
   //CLog::Log(LOGDEBUG, "CRenderManager::UpdateDisplayLatency - Latency set to %1.0f msec", m_displayLatency * 1000.0f);
+#ifdef HAS_DS_PLAYER
+  if (g_application.GetCurrentPlayer() == PCID_DSPLAYER)
+    g_application.m_pPlayer->SetAVDelay(CMediaSettings::GetInstance().GetCurrentVideoSettings().m_AudioDelay);
+#endif
 }
 
 void CRenderManager::UpdateResolution()
@@ -1329,6 +1470,9 @@ void CRenderManager::PrepareNextRender()
 
   if (m_queued.empty())
   {
+#ifdef HAS_DS_PLAYER
+    if (g_application.GetCurrentPlayer() != PCID_DSPLAYER)
+#endif
     CLog::Log(LOGERROR, "CRenderManager::PrepareNextRender - asked to prepare with nothing available");
     m_presentstep = PRESENT_IDLE;
     m_presentevent.notifyAll();
