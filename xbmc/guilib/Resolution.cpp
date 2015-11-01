@@ -25,6 +25,10 @@
 #include "settings/AdvancedSettings.h"
 #include "settings/DisplaySettings.h"
 #include <cstdlib>
+#ifdef HAS_DS_PLAYER
+#include "Application.h"
+#include "settings\Settings.h"
+#endif
 
 RESOLUTION_INFO::RESOLUTION_INFO(int width, int height, float aspect, const std::string &mode) :
   strMode(mode)
@@ -62,6 +66,15 @@ float RESOLUTION_INFO::DisplayRatio() const
 RESOLUTION CResolutionUtils::ChooseBestResolution(float fps, int width, bool is3D)
 {
   RESOLUTION res = g_graphicsContext.GetVideoResolution();
+#ifdef HAS_DS_PLAYER
+  int iValue = CSettings::GetInstance().GetInt(CSettings::SETTING_DSPLAYER_CHANGEREFRESHWITH);
+  if (iValue != ADJUST_REFRESHRATE_WITH_BOTH)
+  {
+    if ((g_application.GetCurrentPlayer() == PCID_DSPLAYER && iValue == ADJUST_REFRESHRATE_WITH_DVDPLAYER)
+      || (g_application.GetCurrentPlayer() == PCID_VideoPlayer && iValue == ADJUST_REFRESHRATE_WITH_DSPLAYER))
+      return res;
+  }
+#endif
   float weight;
   if (!FindResolutionFromOverride(fps, width, is3D, res, weight, false)) //find a refreshrate from overrides
   {

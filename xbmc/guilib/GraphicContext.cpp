@@ -31,6 +31,9 @@
 #include "input/InputManager.h"
 #include "GUIWindowManager.h"
 #include "video/VideoReferenceClock.h"
+#ifdef HAS_DS_PLAYER
+#include "MadvrCallback.h"
+#endif
 
 using namespace KODI::MESSAGING;
 
