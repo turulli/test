@@ -148,7 +148,6 @@ public:
   bool DestroyWindow();
   void StartServices();
   void StopServices();
-
   bool StartServer(enum ESERVERS eServer, bool bStart, bool bWait = false);
 
   void StartPVRManager();
