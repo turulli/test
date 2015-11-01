@@ -39,6 +39,11 @@ public:
   static std::string FormatDecibel(float value);
   static std::string FormatPercentAsDecibel(float value);
 
+#ifdef HAS_DS_PLAYER
+  static void ShowAudioSelector();
+  static void ShowSubsSelector();
+#endif
+
 protected:
   // implementations of ISettingCallback
   virtual void OnSettingChanged(const CSetting *setting);
@@ -72,6 +77,9 @@ protected:
   int m_subtitleStream;
   bool m_subtitleVisible;
   bool m_dspEnabled;
+#ifdef HAS_DS_PLAYER
+  bool m_bIsDSPlayer;
+#endif
 
   typedef std::vector<int> Features;
   Features m_audioCaps;
