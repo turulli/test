@@ -112,12 +112,6 @@ void CMadvrCallback::SetMadvrPixelShader()
     m_pAllocatorCallback->SetMadvrPixelShader();
 }
 
-void CMadvrCallback::SetResolution()
-{
-  if (UsingMadvr())
-    m_pAllocatorCallback->SetResolution();
-}
-
 bool CMadvrCallback::ParentWindowProc(HWND hWnd, UINT uMsg, WPARAM *wParam, LPARAM *lParam, LRESULT *ret) 
 { 
   if (UsingMadvr())

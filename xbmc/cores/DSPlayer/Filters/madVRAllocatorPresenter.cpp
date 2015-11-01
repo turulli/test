@@ -108,32 +108,6 @@ STDMETHODIMP CmadVRAllocatorPresenter::NonDelegatingQueryInterface(REFIID riid, 
   return __super::NonDelegatingQueryInterface(riid, ppv);
 }
 
-void CmadVRAllocatorPresenter::SetResolution()
-{
-  ULONGLONG frameRate;
-  float fps;
-
-  // Set the context in FullScreenVideo
-  g_graphicsContext.SetFullScreenVideo(true);
-
-  if (Com::SmartQIPtr<IMadVRInfo> pInfo = m_pDXR)
-  {
-    pInfo->GetUlonglong("frameRate", &frameRate);
-    fps = 10000000.0 / frameRate;
-  }
-
-  if (CSettings::GetInstance().GetInt(CSettings::SETTING_VIDEOPLAYER_ADJUSTREFRESHRATE) != ADJUST_REFRESHRATE_OFF
-    && (CSettings::GetInstance().GetInt(CSettings::SETTING_DSPLAYER_CHANGEREFRESHWITH) == ADJUST_REFRESHRATE_WITH_BOTH || CSettings::GetInstance().GetInt(CSettings::SETTING_DSPLAYER_CHANGEREFRESHWITH) == ADJUST_REFRESHRATE_WITH_DSPLAYER)
-    && g_graphicsContext.IsFullScreenRoot())
-  {
-    RESOLUTION bestRes = CResolutionUtils::ChooseBestResolution(fps,m_ScreenSize.cx,false);
-    CDSPlayer::SetDsWndVisible(true);
-    g_graphicsContext.SetVideoResolution(bestRes);
-  }
-  else
-    m_updateDisplayLatencyForMadvr = true;
-}
-
 void CmadVRAllocatorPresenter::ExclusiveCallback(LPVOID context, int event)
 {
   CmadVRAllocatorPresenter *pThis = (CmadVRAllocatorPresenter*)context;
@@ -286,14 +260,20 @@ HRESULT CmadVRAllocatorPresenter::Render( REFERENCE_TIME rtStart, REFERENCE_TIME
     CMadvrCallback::Get()->SetRenderOnMadvr(true);
 
     // Update Display Latency for madVR (sets differents delay for each refresh as configured in advancedsettings)
-    if (m_updateDisplayLatencyForMadvr)
-    { 
-      if (Com::SmartQIPtr<IMadVRInfo> pInfo = m_pDXR)
-      { 
-        double refreshRate;
-        pInfo->GetDouble("refreshRate", &refreshRate);
-        g_dsGraph->UpdateDisplayLatencyForMadvr(refreshRate);
-      }
+    /*if (Com::SmartQIPtr<IMadVRInfo> pInfo = m_pDXR)
+    {
+      double refreshRate;
+      pInfo->GetDouble("refreshRate", &refreshRate);
+      g_dsGraph->UpdateDisplayLatencyForMadvr(refreshRate);
+    }*/
+
+    if (Com::SmartQIPtr<IMadVRInfo> pInfo = m_pDXR)
+    {
+      ULONGLONG frameRate;
+      float fps;
+      pInfo->GetUlonglong("frameRate", &frameRate);
+      fps = 10000000.0 / frameRate;
+      g_dsGraph->UpdateDisplayLatencyForMadvr(fps);
     }
   }
 

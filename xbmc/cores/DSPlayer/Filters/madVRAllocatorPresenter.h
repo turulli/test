@@ -142,7 +142,6 @@ public:
   virtual bool IsEnteringExclusive(){ return m_isEnteringExclusive; }
   virtual void EnableExclusive(bool bEnable);
   virtual void SetMadvrPixelShader();
-  virtual void SetResolution();
   virtual bool ParentWindowProc(HWND hWnd, UINT uMsg, WPARAM *wParam, LPARAM *lParam, LRESULT *ret);
   virtual void SetMadvrPosition(CRect wndRect, CRect videoRect);
 
