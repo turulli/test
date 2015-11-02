@@ -41,6 +41,7 @@
 #include "PixelShaderList.h"
 #include "settings/MediaSettings.h"
 #include "DSPlayer.h"
+#include "utils/DSFileUtils.h"
 
 #ifndef TRACE
 #define TRACE(x)
@@ -598,14 +599,14 @@ void CDX9AllocatorPresenter::VSyncThread()
         int ScanlineStart = ScanLine;
         bool bTakenLock;
         WaitForVBlankRange(ScanlineStart, 5, true, true, false, bTakenLock);
-        int64_t TimeStart = CTimeUtils::GetPerfCounter();
+        int64_t TimeStart = CDSTimeUtils::GetPerfCounter();
 
         WaitForVBlankRange(ScanLineMiddle, 5, true, true, false, bTakenLock);
-        int64_t TimeMiddle = CTimeUtils::GetPerfCounter();
+        int64_t TimeMiddle = CDSTimeUtils::GetPerfCounter();
 
         int ScanlineEnd = ScanLine;
         WaitForVBlankRange(ScanlineEnd, 5, true, true, false, bTakenLock);
-        int64_t TimeEnd = CTimeUtils::GetPerfCounter();
+        int64_t TimeEnd = CDSTimeUtils::GetPerfCounter();
 
         double nSeconds = double(TimeEnd - TimeStart) / 10000000.0;
         int64_t DiffMiddle = TimeMiddle - TimeStart;
@@ -1567,7 +1568,7 @@ bool CDX9AllocatorPresenter::GetVBlank(int &_ScanLine, int &_bInVBlank, bool _bM
 
   int64_t llPerf = 0;
   if (_bMeasureTime)
-    llPerf = CTimeUtils::GetPerfCounter();
+    llPerf = CDSTimeUtils::GetPerfCounter();
 
   int ScanLine = 0;
   _ScanLine = 0;
@@ -1594,7 +1595,7 @@ bool CDX9AllocatorPresenter::GetVBlank(int &_ScanLine, int &_bInVBlank, bool _bM
 
   if (_bMeasureTime)
   {
-    int64_t Time = CTimeUtils::GetPerfCounter() - llPerf;
+    int64_t Time = CDSTimeUtils::GetPerfCounter() - llPerf;
     m_RasterStatusWaitTimeMaxCalc = std::max(m_RasterStatusWaitTimeMaxCalc, Time);
   }
 
@@ -1610,7 +1611,7 @@ bool CDX9AllocatorPresenter::WaitForVBlankRange(int &_RasterStart, int _RasterSi
   int InVBlank = 0;
   int64_t llPerf;
   if (_bMeasure)
-    llPerf = CTimeUtils::GetPerfCounter();
+    llPerf = CDSTimeUtils::GetPerfCounter();
   GetVBlank(ScanLine, InVBlank, _bMeasure);
   if (_bMeasure)
     m_VBlankStartWait = ScanLine;
@@ -1741,7 +1742,7 @@ bool CDX9AllocatorPresenter::WaitForVBlankRange(int &_RasterStart, int _RasterSi
       if (!_bTakenLock && _bMeasure)
       {
         _bTakenLock = true;
-        llPerfLock = CTimeUtils::GetPerfCounter();
+        llPerfLock = CDSTimeUtils::GetPerfCounter();
         LockD3DDevice();
       }
     }
@@ -1765,11 +1766,11 @@ bool CDX9AllocatorPresenter::WaitForVBlankRange(int &_RasterStart, int _RasterSi
   if (_bMeasure)
   {
     m_VBlankEndWait = ScanLine;
-    m_VBlankWaitTime = CTimeUtils::GetPerfCounter() - llPerf;
+    m_VBlankWaitTime = CDSTimeUtils::GetPerfCounter() - llPerf;
 
     if (_bTakenLock)
     {
-      m_VBlankLockTime = CTimeUtils::GetPerfCounter() - llPerfLock;
+      m_VBlankLockTime = CDSTimeUtils::GetPerfCounter() - llPerfLock;
     }
     else
       m_VBlankLockTime = 0;
@@ -1881,7 +1882,7 @@ STDMETHODIMP_(bool) CDX9AllocatorPresenter::Paint(bool fAll)
   if (CDSPlayer::PlayerState == DSPLAYER_CLOSING || CDSPlayer::PlayerState == DSPLAYER_CLOSED)
     return false;
 
-  int64_t StartPaint = CTimeUtils::GetPerfCounter();
+  int64_t StartPaint = CDSTimeUtils::GetPerfCounter();
   CAutoLock cRenderLock(&m_RenderLock);
 
   if (m_WindowRect.right <= m_WindowRect.left || m_WindowRect.bottom <= m_WindowRect.top
@@ -2183,20 +2184,20 @@ STDMETHODIMP_(bool) CDX9AllocatorPresenter::Paint(bool fAll)
 
   if (g_dsSettings.pRendererSettings->flushGPUBeforeVSync && pEventQuery)
   {
-    int64_t llPerf = CTimeUtils::GetPerfCounter();
+    int64_t llPerf = CDSTimeUtils::GetPerfCounter();
     BOOL Data;
     //Sleep(5);
-    int64_t FlushStartTime = CTimeUtils::GetPerfCounter();
+    int64_t FlushStartTime = CDSTimeUtils::GetPerfCounter();
     while (S_FALSE == pEventQuery->GetData(&Data, sizeof(Data), D3DGETDATA_FLUSH))
     {
       if (!g_dsSettings.pRendererSettings->flushGPUWait)
         break;
       Sleep(1);
-      if (CTimeUtils::GetPerfCounter() - FlushStartTime > 500000)
+      if (CDSTimeUtils::GetPerfCounter() - FlushStartTime > 500000)
         break; // timeout after 50 ms
     }
     if (g_dsSettings.pRendererSettings->flushGPUWait)
-      m_WaitForGPUTime = CTimeUtils::GetPerfCounter() - llPerf;
+      m_WaitForGPUTime = CDSTimeUtils::GetPerfCounter() - llPerf;
     else
       m_WaitForGPUTime = 0;
   }
@@ -2204,7 +2205,7 @@ STDMETHODIMP_(bool) CDX9AllocatorPresenter::Paint(bool fAll)
     m_WaitForGPUTime = 0;
   if (fAll)
   {
-    m_PaintTime = (CTimeUtils::GetPerfCounter() - StartPaint);
+    m_PaintTime = (CDSTimeUtils::GetPerfCounter() - StartPaint);
     m_PaintTimeMin = std::min(m_PaintTimeMin, m_PaintTime);
     m_PaintTimeMax = std::max(m_PaintTimeMax, m_PaintTime);
   }
@@ -2218,7 +2219,7 @@ STDMETHODIMP_(bool) CDX9AllocatorPresenter::Paint(bool fAll)
     ASSERT(bTest == bDoVSyncInPresent);
     if (!bDoVSyncInPresent)
     {
-      int64_t Time = CTimeUtils::GetPerfCounter();
+      int64_t Time = CDSTimeUtils::GetPerfCounter();
       OnVBlankFinished(fAll, Time);
       if (!m_bIsEVR || m_OrderedPaint)
         CalculateJitter(Time);
@@ -2229,7 +2230,7 @@ STDMETHODIMP_(bool) CDX9AllocatorPresenter::Paint(bool fAll)
     UnlockD3DDevice();
 
   m_bPaintWasCalled = true;
-  m_beforePresentTime = CTimeUtils::GetPerfCounter();
+  m_beforePresentTime = CDSTimeUtils::GetPerfCounter();
   return(true);
 
   // We have some code that need to be runned after the D3D Present method was called.
@@ -2752,12 +2753,12 @@ void CDX9AllocatorPresenter::OnAfterPresent()
 
     if (g_dsSettings.pRendererSettings->flushGPUAfterPresent && pEventQuery)
     {
-      int64_t FlushStartTime = CTimeUtils::GetPerfCounter();
+      int64_t FlushStartTime = CDSTimeUtils::GetPerfCounter();
       while (S_FALSE == pEventQuery->GetData(&Data, sizeof(Data), D3DGETDATA_FLUSH))
       {
         if (!g_dsSettings.pRendererSettings->flushGPUWait)
           break;
-        if (CTimeUtils::GetPerfCounter() - FlushStartTime > 500000)
+        if (CDSTimeUtils::GetPerfCounter() - FlushStartTime > 500000)
           break; // timeout after 50 ms
       }
     }
@@ -2776,14 +2777,14 @@ void CDX9AllocatorPresenter::OnAfterPresent()
       GetVBlank(ScanLine, bInVBlank, false);
 
     }
-    m_VBlankStartMeasureTime = CTimeUtils::GetPerfCounter();
+    m_VBlankStartMeasureTime = CDSTimeUtils::GetPerfCounter();
     m_VBlankStartMeasure = ScanLine;
 
-    int64_t llPerf = CTimeUtils::GetPerfCounter();
+    int64_t llPerf = CDSTimeUtils::GetPerfCounter();
     if (fAll && bDoVSyncInPresent)
     {
       // PresentWaitTime is always 0
-      m_PresentWaitTime = (CTimeUtils::GetPerfCounter() - m_beforePresentTime);
+      m_PresentWaitTime = (CDSTimeUtils::GetPerfCounter() - m_beforePresentTime);
       m_PresentWaitTimeMin = std::min(m_PresentWaitTimeMin, m_PresentWaitTime);
       m_PresentWaitTimeMax = std::max(m_PresentWaitTimeMax, m_PresentWaitTime);
     }
@@ -2797,7 +2798,7 @@ void CDX9AllocatorPresenter::OnAfterPresent()
 
   if (bDoVSyncInPresent)
   {
-    int64_t Time = CTimeUtils::GetPerfCounter();
+    int64_t Time = CDSTimeUtils::GetPerfCounter();
     if (!m_bIsEVR || m_OrderedPaint)
       CalculateJitter(Time);
     OnVBlankFinished(fAll, Time);
