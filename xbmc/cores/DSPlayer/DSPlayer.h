@@ -68,6 +68,23 @@ enum DSPLAYER_STATE
   DSPLAYER_ERROR
 };
 
+class CAutoSetEvent
+{
+public:
+  CAutoSetEvent(CEvent *event)
+    : m_event(event)
+  {
+    if (m_event)
+      m_event->Reset();
+  }
+  ~CAutoSetEvent()
+  {
+    if (m_event)
+      m_event->Set();
+  }
+private:
+  CEvent* m_event;
+};
 
 class CDSInputStreamPVRManager;
 class CDSPlayer;
