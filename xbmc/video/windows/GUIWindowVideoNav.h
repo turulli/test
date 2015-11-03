@@ -24,15 +24,6 @@
 
 class CFileItemList;
 
-#ifdef HAS_DS_PLAYER
-enum SelectTvShowItem
-{
-  NOSELECT = 0,
-  LASTPLAYED = 1,
-  LASTWATCHED = 2
-};
-#endif
-
 enum SelectFirstUnwatchedItem
 {
   NEVER = 0,
@@ -95,9 +86,6 @@ protected:
   VECSOURCES m_shares;
 
 private:
-#ifdef HAS_DS_PLAYER
-  int GetSettingSelecTvShow();
-#endif
   virtual SelectFirstUnwatchedItem GetSettingSelectFirstUnwatchedItem();
   virtual IncludeAllSeasonsAndSpecials GetSettingIncludeAllSeasonsAndSpecials();
   virtual int GetFirstUnwatchedItemIndex(bool includeAllSeasons, bool includeSpecials);
