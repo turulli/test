@@ -25,6 +25,9 @@
 #include "Texture.h"
 #include "windowing/WindowingFactory.h"
 #include "utils/log.h"
+#ifdef HAS_DS_PLAYER
+#include "MadvrCallback.h"
+#endif
 
 // stuff for freetype
 #include <ft2build.h>
@@ -64,6 +67,11 @@ bool CGUIFontTTFDX::FirstBegin()
   ID3D11DeviceContext* pContext = g_Windowing.Get3D11Context();
   if (!pContext)
     return false;
+
+#ifdef HAS_DS_PLAYER
+  // Render count to detect when the GUI it's active or deactive (useful for madVR latency mode)
+    CMadvrCallback::Get()->IncRenderCount();
+#endif
 
   CGUIShaderDX* pGUIShader = g_Windowing.GetGUIShader();
   pGUIShader->Begin(SHADER_METHOD_RENDER_FONT);

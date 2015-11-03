@@ -142,6 +142,18 @@
 #include "peripherals/dialogs/GUIDialogPeripheralSettings.h"
 #include "addons/AddonCallbacksGUI.h"
 
+#ifdef HAS_DS_PLAYER
+#include "cores/DSPlayer/GUIDialogShaderList.h"
+#include "cores/DSPlayer/Dialogs/GUIDialogDSRules.h"
+#include "cores/DSPlayer/Dialogs/GUIDialogDSFilters.h"
+#include "cores/DSPlayer/Dialogs/GUIDialogDSPlayercoreFactory.h"
+#include "cores/DSPlayer/Dialogs/GUIDialogLAVVideo.h"
+#include "cores/DSPlayer/Dialogs/GUIDialogLAVAudio.h"
+#include "cores/DSPlayer/Dialogs/GUIDialogLAVSplitter.h"
+#include "cores/DSPlayer/Dialogs/GUIDIalogMadvrScaling.h"
+#endif
+
+using namespace std;
 using namespace PVR;
 using namespace PERIPHERALS;
 using namespace KODI::MESSAGING;
@@ -212,6 +224,15 @@ void CGUIWindowManager::CreateWindows()
   Add(new CGUIDialogVisualisationPresetList);
   Add(new CGUIDialogVideoSettings);
   Add(new CGUIDialogAudioSubtitleSettings);
+#ifdef HAS_DS_PLAYER
+  Add(new CGUIDialogDSRules);
+  Add(new CGUIDialogDSFilters);
+  Add(new CGUIDialogDSPlayercoreFactory);
+  Add(new CGUIDialogLAVVideo);
+  Add(new CGUIDialogLAVAudio);
+  Add(new CGUIDialogLAVSplitter);
+  Add(new CGUIDialogMadvrScaling);
+#endif
   Add(new CGUIDialogVideoBookmarks);
   // Don't add the filebrowser dialog - it's created and added when it's needed
   Add(new CGUIDialogNetworkSetup);
@@ -322,6 +343,15 @@ bool CGUIWindowManager::DestroyWindows()
     Delete(WINDOW_DIALOG_MEDIA_SOURCE);
     Delete(WINDOW_DIALOG_VIDEO_OSD_SETTINGS);
     Delete(WINDOW_DIALOG_AUDIO_OSD_SETTINGS);
+#ifdef HAS_DS_PLAYER
+    Delete(WINDOW_DIALOG_DSRULES);
+    Delete(WINDOW_DIALOG_DSFILTERS);
+    Delete(WINDOW_DIALOG_DSPLAYERCORE);
+    Delete(WINDOW_DIALOG_MADVR);
+    Delete(WINDOW_DIALOG_LAVVIDEO);
+    Delete(WINDOW_DIALOG_LAVAUDIO);
+    Delete(WINDOW_DIALOG_LAVSPLITTER);
+#endif
     Delete(WINDOW_DIALOG_VIDEO_BOOKMARKS);
     Delete(WINDOW_DIALOG_CONTENT_SETTINGS);
     Delete(WINDOW_DIALOG_FAVOURITES);
@@ -1019,7 +1049,27 @@ void CGUIWindowManager::RenderPass() const
   for (iDialog it = renderList.begin(); it != renderList.end(); ++it)
   {
     if ((*it)->IsDialogRunning())
+#ifdef HAS_DS_PLAYER
+    {
+      // Don't show video settings dialog under madVR/lavvideo/lavaudio/lavsplitter settings
+      if ((*it)->GetID() == WINDOW_DIALOG_VIDEO_OSD_SETTINGS)
+      {
+        CGUIDialog* pDialogMadvr = (CGUIDialog *)g_windowManager.GetWindow(WINDOW_DIALOG_MADVR);
+        CGUIDialog* pDialogLAVVideo = (CGUIDialog *)g_windowManager.GetWindow(WINDOW_DIALOG_LAVVIDEO);
+        CGUIDialog* pDialogLAVAudio = (CGUIDialog *)g_windowManager.GetWindow(WINDOW_DIALOG_LAVAUDIO);
+        CGUIDialog* pDialogLAVSplitter = (CGUIDialog *)g_windowManager.GetWindow(WINDOW_DIALOG_LAVSPLITTER);
+
+        if ((pDialogMadvr && pDialogMadvr->IsDialogRunning())
+          || (pDialogLAVVideo && pDialogLAVVideo->IsDialogRunning())
+          || (pDialogLAVAudio && pDialogLAVAudio->IsDialogRunning())
+          || (pDialogLAVSplitter && pDialogLAVSplitter->IsDialogRunning()))
+          continue;
+      }
       (*it)->DoRender();
+    }
+#else
+      (*it)->DoRender();
+#endif
   }
 }
 
