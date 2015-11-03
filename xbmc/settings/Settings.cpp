@@ -86,6 +86,11 @@
 #include "view/ViewStateSettings.h"
 #include "input/InputManager.h"
 
+#ifdef HAS_DS_PLAYER  
+#include "FGLoader.h"
+#include "cores/DSPlayer/Dialogs/GUIDialogDSManager.h"
+#endif
+
 #define SETTINGS_XML_FOLDER "special://xbmc/system/settings/"
 #define SETTINGS_XML_ROOT   "settings"
 
@@ -409,6 +414,26 @@ const std::string CSettings::SETTING_GENERAL_ADDONNOTIFICATIONS = "general.addon
 const std::string CSettings::SETTING_GENERAL_ADDONFOREIGNFILTER = "general.addonforeignfilter";
 const std::string CSettings::SETTING_GENERAL_ADDONBROKENFILTER = "general.addonbrokenfilter";
 
+#ifdef HAS_DS_PLAYER
+const std::string CSettings::SETTING_DSPLAYER_DEFAULTVIDEOPLAYER = "dsplayer.defaultvideoplayer";
+const std::string CSettings::SETTING_DSPLAYER_AUTOFILTERSETTINGS = "dsplayer.autofiltersettings";
+const std::string CSettings::SETTING_DSPLAYER_CHANGEREFRESHWITH = "videoplayer.changerefreshwith";
+const std::string CSettings::SETTING_DSPLAYER_TVSHOWSELECTITEM = "videolibrary.tvshowsselectitem";
+const std::string CSettings::SETTING_DSPLAYER_MANAGEMADVRWITHKODI = "dsplayer.madvrsettingswithkodi";
+const std::string CSettings::SETTING_DSPLAYER_DELAYMADVRPLAYBACK = "dsplayer.delaymadvrplayback";
+const std::string CSettings::SETTING_DSPLAYER_MADVREXCLUSIVEMODE = "dsplayer.madvrexclusivemode ";
+const std::string CSettings::SETTING_DSPLAYER_EXITMADVRFULLSCREEN = "dsplayer.exitmadvrfullscreen";
+const std::string CSettings::SETTING_DSPLAYER_SHOWSPLITTERDETAIL = "dsplayer.showsplitterdetail";
+const std::string CSettings::SETTING_DSPLAYER_VIDEOSUBSEX = "dsplayer.videosubsexpandedselector";
+const std::string CSettings::SETTING_DSPLAYER_VIDEOAUDIOEX = "dsplayer.videoaudioexpandedselector";
+const std::string CSettings::SETTING_DSPLAYER_VIDEORENDERER = "dsplayer.videorenderer";
+const std::string CSettings::SETTING_DSPLAYER_AUDIORENDERER = "dsplayer.audiorenderer";
+const std::string CSettings::SETTING_DSPLAYER_FILTERSMANAGEMENT = "dsplayer.filtersmanagement";
+const std::string CSettings::SETTING_DSPLAYER_EXSUBTITLELANGUAGE = "dsplayer.exsubtitlelanguage";
+#endif
+
+//todo dsplayer
+
 CSettings::CSettings()
   : m_initialized(false)
 {
@@ -549,6 +574,11 @@ void CSettings::Uninitialize()
   m_settingsManager->UnregisterSettingOptionsFiller("audiocdencoders");
   m_settingsManager->UnregisterSettingOptionsFiller("aequalitylevels");
   m_settingsManager->UnregisterSettingOptionsFiller("audiodevices");
+#ifdef HAS_DS_PLAYER 
+  m_settingsManager->UnregisterSettingOptionsFiller("dsvideorenderer");
+  m_settingsManager->UnregisterSettingOptionsFiller("dsaudiorenderer");
+  m_settingsManager->UnregisterSettingOptionsFiller("dsextrafilter");
+#endif
   m_settingsManager->UnregisterSettingOptionsFiller("audiodevicespassthrough");
   m_settingsManager->UnregisterSettingOptionsFiller("audiostreamsilence");
   m_settingsManager->UnregisterSettingOptionsFiller("charsets");
@@ -918,6 +948,11 @@ void CSettings::InitializeOptionFillers()
 #endif
   m_settingsManager->RegisterSettingOptionsFiller("aequalitylevels", CAEFactory::SettingOptionsAudioQualityLevelsFiller);
   m_settingsManager->RegisterSettingOptionsFiller("audiodevices", CAEFactory::SettingOptionsAudioDevicesFiller);
+#ifdef HAS_DS_PLAYER  
+  m_settingsManager->RegisterSettingOptionsFiller("dsvideorenderer", CFGLoader::SettingOptionsDSVideoRendererFiller);
+  m_settingsManager->RegisterSettingOptionsFiller("dsaudiorenderer", CFGLoader::SettingOptionsDSAudioRendererFiller);
+  m_settingsManager->RegisterSettingOptionsFiller("dsextrafilter", CGUIDialogDSManager::AllFiltersConfigOptionFiller);
+#endif
   m_settingsManager->RegisterSettingOptionsFiller("audiodevicespassthrough", CAEFactory::SettingOptionsAudioDevicesPassthroughFiller);
   m_settingsManager->RegisterSettingOptionsFiller("audiostreamsilence", CAEFactory::SettingOptionsAudioStreamsilenceFiller);
   m_settingsManager->RegisterSettingOptionsFiller("charsets", CCharsetConverter::SettingOptionsCharsetsFiller);
@@ -1029,6 +1064,15 @@ void CSettings::InitializeISettingCallbacks()
   settingSet.insert(CSettings::SETTING_VIDEOLIBRARY_CLEANUP);
   settingSet.insert(CSettings::SETTING_VIDEOLIBRARY_IMPORT);
   settingSet.insert(CSettings::SETTING_VIDEOLIBRARY_EXPORT);
+#ifdef HAS_DS_PLAYER
+  settingSet.insert("dsplayer.rules");
+  settingSet.insert("dsplayer.filters");
+  settingSet.insert("dsplayer.playercore");
+  settingSet.insert("dsplayer.lavsplitter");
+  settingSet.insert("dsplayer.lavvideo");
+  settingSet.insert("dsplayer.lavaudio");
+  settingSet.insert("dsplayer.xysubfilter");
+#endif
   m_settingsManager->RegisterCallback(&CMediaSettings::GetInstance(), settingSet);
 
   settingSet.clear();

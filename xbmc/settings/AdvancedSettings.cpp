@@ -347,6 +347,11 @@ void CAdvancedSettings::Initialize()
   m_jsonOutputCompact = true;
   m_jsonTcpPort = 9090;
 
+#ifdef HAS_DS_PLAYER
+  m_bDSPlayerFastChannelSwitching = true;
+  m_bDSPlayerUseUNCPathsForLiveTV = false;
+#endif
+
   m_enableMultimediaKeys = false;
 
   m_canWindowed = true;
@@ -1095,6 +1100,25 @@ void CAdvancedSettings::ParseSettingsFile(const std::string &file)
     XMLUtils::GetString(pDatabase, "ciphers", m_databaseEpg.ciphers);
     XMLUtils::GetBoolean(pDatabase, "compression", m_databaseEpg.compression);
   }
+#ifdef HAS_DS_PLAYER
+  pDatabase = pRootElement->FirstChildElement("dsplayerdatabase");
+  if (pDatabase)
+  {
+    XMLUtils::GetString(pDatabase, "type", m_databaseDSPlayer.type);
+    XMLUtils::GetString(pDatabase, "host", m_databaseDSPlayer.host);
+    XMLUtils::GetString(pDatabase, "port", m_databaseDSPlayer.port);
+    XMLUtils::GetString(pDatabase, "user", m_databaseDSPlayer.user);
+    XMLUtils::GetString(pDatabase, "pass", m_databaseDSPlayer.pass);
+    XMLUtils::GetString(pDatabase, "name", m_databaseDSPlayer.name);
+  }
+  
+  pElement = pRootElement->FirstChildElement("dsplayer");
+  if (pElement)
+  {
+    XMLUtils::GetBoolean(pElement, "fastchannelswitching", m_bDSPlayerFastChannelSwitching);
+    XMLUtils::GetBoolean(pElement, "useuncpathsforlivetv", m_bDSPlayerUseUNCPathsForLiveTV);
+  }
+#endif
 
   pElement = pRootElement->FirstChildElement("enablemultimediakeys");
   if (pElement)

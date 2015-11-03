@@ -366,6 +366,25 @@ public:
   static const std::string SETTING_GENERAL_ADDONFOREIGNFILTER;
   static const std::string SETTING_GENERAL_ADDONBROKENFILTER;
 
+#ifdef HAS_DS_PLAYER
+  static const std::string CSettings::SETTING_DSPLAYER_DEFAULTVIDEOPLAYER;
+  static const std::string CSettings::SETTING_DSPLAYER_AUTOFILTERSETTINGS;
+  static const std::string CSettings::SETTING_DSPLAYER_CHANGEREFRESHWITH;
+  static const std::string CSettings::SETTING_DSPLAYER_TVSHOWSELECTITEM;
+  static const std::string CSettings::SETTING_DSPLAYER_MANAGEMADVRWITHKODI;
+  static const std::string CSettings::SETTING_DSPLAYER_DELAYMADVRPLAYBACK;
+  static const std::string CSettings::SETTING_DSPLAYER_MADVREXCLUSIVEMODE;
+  static const std::string CSettings::SETTING_DSPLAYER_EXITMADVRFULLSCREEN;
+  static const std::string CSettings::SETTING_DSPLAYER_SHOWSPLITTERDETAIL;
+  static const std::string CSettings::SETTING_DSPLAYER_VIDEOSUBSEX;
+  static const std::string CSettings::SETTING_DSPLAYER_VIDEOAUDIOEX;
+  static const std::string CSettings::SETTING_DSPLAYER_VIDEORENDERER;
+  static const std::string CSettings::SETTING_DSPLAYER_AUDIORENDERER;
+  static const std::string CSettings::SETTING_DSPLAYER_FILTERSMANAGEMENT;
+  static const std::string CSettings::SETTING_DSPLAYER_EXSUBTITLELANGUAGE;
+#endif
+
+
   /*!
    \brief Creates a new settings wrapper around a new settings manager.
 
