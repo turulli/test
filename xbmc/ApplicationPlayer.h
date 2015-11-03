@@ -179,14 +179,4 @@ public:
   void  SetVolume(float volume);
   bool  SwitchChannel(const PVR::CPVRChannelPtr &channel);
   void  ToFFRW(int iSpeed = 0);
-
-#ifdef HAS_DS_PLAYER
-  int  GetEditionsCount();
-  int  GetEdition();
-  void GetEditionInfo(int iEdition, std::string &strEditionName, REFERENCE_TIME *prt);
-  void SetEdition(int iEdition);
-  bool IsMatroskaEditions();
-  void ShowEditionDlg(bool playStart);
-#endif
-
 };

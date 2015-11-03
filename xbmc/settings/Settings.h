@@ -375,9 +375,6 @@ public:
   static const std::string CSettings::SETTING_DSPLAYER_DELAYMADVRPLAYBACK;
   static const std::string CSettings::SETTING_DSPLAYER_MADVREXCLUSIVEMODE;
   static const std::string CSettings::SETTING_DSPLAYER_EXITMADVRFULLSCREEN;
-  static const std::string CSettings::SETTING_DSPLAYER_MINTITLELENGTH;
-  static const std::string CSettings::SETTING_DSPLAYER_SHOWBDTITLECHOICE;
-  static const std::string CSettings::SETTING_DSPLAYER_BDAUTOLOADINDEX;
   static const std::string CSettings::SETTING_DSPLAYER_SHOWSPLITTERDETAIL;
   static const std::string CSettings::SETTING_DSPLAYER_VIDEOSUBSEX;
   static const std::string CSettings::SETTING_DSPLAYER_VIDEOAUDIOEX;

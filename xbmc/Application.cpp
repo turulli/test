@@ -3329,10 +3329,6 @@ PlayBackRet CApplication::PlayFile(const CFileItem& item, bool bRestart)
     m_nextPlaylistItem = -1;
     m_currentStackPosition = 0;
     m_currentStack->Clear();
-#ifdef HAS_DS_PLAYER
-    m_progressTrackingVideoResumeBookmark.edition.editionNumber = 0;
-    m_progressTrackingVideoResumeBookmark.edition.editionName = "";
-#endif
     if (item.IsVideo())
       CUtil::ClearSubtitles();
   }
@@ -3985,14 +3981,6 @@ void CApplication::StopPlaying()
   int iWin = g_windowManager.GetActiveWindow();
   if ( m_pPlayer->IsPlaying() )
   {
-
-#ifdef HAS_DS_PLAYER
-  if (m_pPlayer->GetEditionsCount() > 1)
-  {
-    m_progressTrackingVideoResumeBookmark.edition.editionNumber = m_pPlayer->GetEdition();
-    m_pPlayer->GetEditionInfo(m_progressTrackingVideoResumeBookmark.edition.editionNumber, m_progressTrackingVideoResumeBookmark.edition.editionName, NULL);
-   }
-#endif
     m_pPlayer->CloseFile();
 
     // turn off visualisation window when stopping

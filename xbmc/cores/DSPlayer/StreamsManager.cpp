@@ -444,8 +444,6 @@ void CStreamsManager::LoadIAMStreamSelectStreamsInternal()
         infos = new CDSStreamDetailSubtitle();
       break;
     }
-    case CStreamDetail::EDITION:	m_mkveditions = true;
-    case CStreamDetail::BD_TITLE:	infos = new CDSStreamDetailEdition();	break;
     default: continue;
     }
 
@@ -479,16 +477,6 @@ void CStreamsManager::LoadIAMStreamSelectStreamsInternal()
       else
         SubtitleManager->GetSubtitles().push_back(static_cast<CDSStreamDetailSubtitle *>(infos));
       CLog::Log(LOGNOTICE, "%s Subtitle stream found : %s - index: %i", __FUNCTION__, pS.displayname.c_str(), pS.IAMStreamSelect_Index);
-    }
-    else if (group == CStreamDetail::EDITION || group == CStreamDetail::BD_TITLE)
-    {
-      CDSStreamDetailEdition * pEdition = static_cast<CDSStreamDetailEdition *>(infos);
-      if (Com::SmartQIPtr<IBdStreamSelect> pBDSS = m_pSplitter)
-      {
-        pBDSS->GetTitleInfo(m_editionStreams.size(), NULL, &pEdition->m_rtDuration);
-      }
-      m_editionStreams.push_back(pEdition);
-      CLog::Log(LOGNOTICE, "%s Editions stream found : %s - index : %i", __FUNCTION__, pS.displayname.c_str(), pS.IAMStreamSelect_Index);
     }
 
     DeleteMediaType(mediaType);

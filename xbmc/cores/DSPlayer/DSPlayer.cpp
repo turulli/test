@@ -63,6 +63,7 @@
 #include "settings/MediaSettings.h"
 #include "settings/DisplaySettings.h"
 #include "MadvrCallback.h"
+#include "DSPlayerDatabase.h"
 
 using namespace PVR;
 using namespace std;
@@ -242,7 +243,7 @@ void CDSPlayer::ShowEditionDlg(bool playStart)
   CGUIDialogSelect *dialog = (CGUIDialogSelect *)g_windowManager.GetWindow(WINDOW_DIALOG_SELECT);
 
   bool listAllTitles = false;
-  UINT minLength = CSettings::GetInstance().GetInt(CSettings::SETTING_DSPLAYER_MINTITLELENGTH);
+  UINT minLength;// = CSettings::GetInstance().GetInt(CSettings::SETTING_DSPLAYER_MINTITLELENGTH);
 
   while (true)
   {
@@ -369,8 +370,10 @@ bool CDSPlayer::OpenFileInternal(const CFileItem& file)
       if (CMadvrCallback::Get()->UsingMadvr())
         SetMadvrResolution();
 
+      /*
       if (CSettings::GetInstance().GetBool(CSettings::SETTING_DSPLAYER_SHOWBDTITLECHOICE))
         ShowEditionDlg(true);
+        */
 
       // Seek
       if (m_PlayerOptions.starttime > 0)

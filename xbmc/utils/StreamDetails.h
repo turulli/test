@@ -34,12 +34,6 @@ public:
     VIDEO,
     AUDIO,
     SUBTITLE
-#ifdef HAS_DS_PLAYER
-    ,
-    EDITION = 18,
-    BD_TITLE,
-    PROGRAMM
-#endif
   };
 
   CStreamDetail(StreamType type) : m_eType(type), m_pParent(NULL) {};

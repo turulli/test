@@ -1397,28 +1397,6 @@
           <control type="list" format="string" />
         </setting>
       </group>
-      <group id="3">
-        <setting id="dsplayer.showbdtitlechoice" type="boolean" label="55030" help="90008">
-          <level>0</level>
-          <default>true</default>
-          <control type="toggle" />
-        </setting>
-        <setting id="dsplayer.showbdtitlechoice" type="boolean" label="55032" help="90009">
-          <level>0</level>
-          <default>true</default>
-          <control type="toggle" />
-        </setting>
-        <setting id="dsplayer.mintitlelength" type="integer" label="55022" help="90010">
-          <level>0</level>
-          <default>30</default>
-          <constraints>
-            <minimum>0</minimum>
-            <step>1</step>
-            <maximum>300</maximum>
-          </constraints>
-          <control type="spinner" format="integer" />
-	</setting>
-      </group>
       <group id="4">
         <setting id="dsplayer.exsubtitlelanguage" type="string" label="55085" help="36120">
           <level>0</level>

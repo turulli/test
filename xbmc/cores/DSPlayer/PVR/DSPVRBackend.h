@@ -38,6 +38,7 @@
 #include "DSSocket.h"
 #include "URL.h"
 #include "utils/URIUtils.h"
+#include "Utils/StdString.h"
 
 using XFILE::CFile;
 

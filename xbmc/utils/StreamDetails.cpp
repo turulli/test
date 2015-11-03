@@ -167,28 +167,6 @@ bool CStreamDetailSubtitle::IsWorseThan(CStreamDetail *that)
     g_LangCodeExpander.CompareISO639Codes(((CStreamDetailSubtitle *)that)->m_strLanguage, g_langInfo.GetSubtitleLanguage());
 }
 
-#ifdef HAS_DS_PLAYER
-CStreamDetailEditon::CStreamDetailEditon():CStreamDetail(CStreamDetail::EDITION)
-{
-}
-void CStreamDetailEditon::Archive(CArchive& ar)
-{
-  CStreamDetail::Archive(ar);
-  if (ar.IsStoring())
-  {
-    ar << m_strName;
-  }
-  else
-  {
-    ar >> m_strName;
-  }
-}
-void CStreamDetailEditon::Serialize(CVariant& value)
-{
-  value["name"] = m_strName;
-}
-#endif
-
 CStreamDetailSubtitle& CStreamDetailSubtitle::operator=(const CStreamDetailSubtitle &that)
 {
   if (this != &that)

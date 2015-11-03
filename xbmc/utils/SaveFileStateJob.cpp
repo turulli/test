@@ -69,22 +69,14 @@ bool CSaveFileStateJob::DoWork()
       std::string redactPath = CURL::GetRedacted(progressTrackingFile);
       CLog::Log(LOGDEBUG, "%s - Saving file state for video item %s", __FUNCTION__, redactPath.c_str());
 #ifdef HAS_DS_PLAYER
-	  CDSPlayerDatabase dspdb;
-	  if(!dspdb.Open())
-	  {
-		  CLog::Log(LOGWARNING, "%s - Unable to open DSPlayer database. Can not save file state!", __FUNCTION__);
-	  }
-	  else if (m_bookmark.timeInSeconds <= 0.0f)
-	  {
-		  dspdb.ClearEditionOfFile(progressTrackingFile);
-	  }
-	  else if(m_bookmark.edition.IsSet())
-	  {
-		  dspdb.AddEdition(progressTrackingFile, m_bookmark.edition);
-	  }
-      if (m_madvrSettings != CMediaSettings::GetInstance().GetAtStartMadvrSettings() && CSettings::GetInstance().GetInt(CSettings::SETTING_DSPLAYER_MANAGEMADVRWITHKODI) == KODIGUI_LOAD_DSPLAYER)
+      CDSPlayerDatabase dspdb;
+      if (!dspdb.Open())
       {
-          dspdb.SetVideoSettings(progressTrackingFile, m_madvrSettings);
+        CLog::Log(LOGWARNING, "%s - Unable to open DSPlayer database. Can not save file state!", __FUNCTION__);
+      }
+      else if (m_madvrSettings != CMediaSettings::GetInstance().GetAtStartMadvrSettings() && CSettings::GetInstance().GetInt(CSettings::SETTING_DSPLAYER_MANAGEMADVRWITHKODI) == KODIGUI_LOAD_DSPLAYER)
+      {
+        dspdb.SetVideoSettings(progressTrackingFile, m_madvrSettings);
       }
 #endif
       CVideoDatabase videodatabase;

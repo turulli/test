@@ -647,68 +647,6 @@ void CApplicationPlayer::GetVideoInfo(std::string& strVideoInfo)
     player->GetVideoInfo(strVideoInfo);
 }
 
-#ifdef HAS_DS_PLAYER
-int CApplicationPlayer::GetEditionsCount()
-{
-  std::shared_ptr<IPlayer> player = GetInternal();
-  if (player)
-  {
-    return player->GetEditionsCount();
-  }
-  else
-    return 0;
-}
-
-int CApplicationPlayer::GetEdition()
-{
-  std::shared_ptr<IPlayer> player = GetInternal();
-  if (player)
-  {
-    return player->GetEdition();
-  }
-  else
-    return -1;
-}
-
-void CApplicationPlayer::GetEditionInfo(int iEdition, std::string &strEditionName, REFERENCE_TIME *prt)
-{
-  std::shared_ptr<IPlayer> player = GetInternal();
-  if (player)
-  {
-    player->GetEditionInfo(iEdition, strEditionName, prt);
-  }
-}
-
-void CApplicationPlayer::SetEdition(int iEdition)
-{
-  std::shared_ptr<IPlayer> player = GetInternal();
-  if (player)
-  {
-    player->SetEdition(iEdition);
-  }
-}
-
-bool CApplicationPlayer::IsMatroskaEditions()
-{
-  std::shared_ptr<IPlayer> player = GetInternal();
-  if (player)
-  {
-    return player->IsMatroskaEditions();
-  }
-  else
-    return false;
-}
-
-void CApplicationPlayer::ShowEditionDlg(bool playStart)
-{
-  std::shared_ptr<IPlayer> player = GetInternal();
-  if (player)
-  {
-    return player->ShowEditionDlg(playStart);
-  }
-}
-#endif
-
 void CApplicationPlayer::GetGeneralInfo(std::string& strVideoInfo)
 {
   std::shared_ptr<IPlayer> player = GetInternal();

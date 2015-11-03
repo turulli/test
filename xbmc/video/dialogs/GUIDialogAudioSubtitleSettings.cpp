@@ -74,7 +74,6 @@
 
 #ifdef HAS_DS_PLAYER
 // separator
-#define EDITONS_SETTINGS		          "editions.settings"
 #endif
 
 
@@ -269,10 +268,6 @@ void CGUIDialogAudioSubtitleSettings::OnSettingAction(const CSetting *setting)
   else if (settingId == SETTING_AUDIO_MAKE_DEFAULT)
     Save();
 
-#ifdef HAS_DS_PLAYER
-  else if (settingId == EDITONS_SETTINGS)
-    g_application.m_pPlayer->ShowEditionDlg(false);
-#endif
 }
 
 void CGUIDialogAudioSubtitleSettings::Save()
@@ -334,15 +329,6 @@ void CGUIDialogAudioSubtitleSettings::InitializeSettings()
     CLog::Log(LOGERROR, "CGUIDialogAudioSubtitleSettings: unable to setup settings");
     return;
   }
-
-#ifdef HAS_DS_PLAYER
-  CSettingGroup *groupEdition = AddGroup(category);
-  if (groupEdition == NULL)
-  {
-    CLog::Log(LOGERROR, "CGUIDialogAudioSubtitleSettings: unable to setup settings");
-    return;
-  }
-#endif
 
   CSettingGroup *groupSaveAsDefault = AddGroup(category);
   if (groupSaveAsDefault == NULL)
@@ -433,13 +419,6 @@ void CGUIDialogAudioSubtitleSettings::InitializeSettings()
   // subtitle browser setting
   if (SupportsSubtitleFeature(IPC_SUBS_EXTERNAL))
     AddButton(groupSubtitles, SETTING_SUBTITLE_BROWSER, 13250, 0);
-
-#ifdef HAS_DS_PLAYER
-  if (g_application.m_pPlayer->GetEditionsCount() > 1)
-  {
-    AddButton(groupEdition, EDITONS_SETTINGS, g_application.m_pPlayer->IsMatroskaEditions() ? 55023 : 55024, 0);
-  }
-#endif
 
   // subtitle stream setting
   AddButton(groupSaveAsDefault, SETTING_AUDIO_MAKE_DEFAULT, 12376, 0);
