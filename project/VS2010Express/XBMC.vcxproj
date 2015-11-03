@@ -308,6 +308,8 @@
     <ClCompile Include="..\..\xbmc\cores\DSPlayer\Utils\IPinHook.cpp" />
     <ClCompile Include="..\..\xbmc\cores\DSPlayer\Utils\MacrovisionKicker.cpp" />
     <ClCompile Include="..\..\xbmc\cores\DSPlayer\Utils\uri.cpp" />
+    <ClCompile Include="..\..\xbmc\cores\DSPlayer\VideoRenderers\BaseDSRenderer.cpp" />
+    <ClCompile Include="..\..\xbmc\cores\DSPlayer\VideoRenderers\RenderDSManager.cpp" />
     <ClCompile Include="..\..\xbmc\cores\DSPlayer\VideoRenderers\WinDsRenderer.cpp" />
     <ClCompile Include="..\..\xbmc\cores\VideoPlayer\DVDCodecs\Audio\DVDAudioCodecPassthrough.cpp" />
     <ClCompile Include="..\..\xbmc\cores\VideoPlayer\DVDCodecs\Overlay\contrib\cc_decoder.c">
@@ -989,6 +991,8 @@
     <ClInclude Include="..\..\xbmc\cores\AudioEngine\Utils\AEPackIEC61937.h" />
     <ClInclude Include="..\..\xbmc\cores\AudioEngine\Utils\AEStreamInfo.h" />
     <ClInclude Include="..\..\xbmc\cores\AudioEngine\Utils\AEUtil.h" />
+    <ClInclude Include="..\..\xbmc\cores\DSPlayer\VideoRenderers\BaseDSRenderer.h" />
+    <ClInclude Include="..\..\xbmc\cores\DSPlayer\VideoRenderers\RenderDSManager.h" />
     <ClInclude Include="..\..\xbmc\cores\VideoPlayer\DVDCodecs\Audio\DVDAudioCodecPassthrough.h" />
     <ClInclude Include="..\..\xbmc\cores\VideoPlayer\DVDCodecs\Overlay\contrib\cc_decoder.h" />
     <ClInclude Include="..\..\xbmc\cores\VideoPlayer\DVDCodecs\Overlay\contrib\cc_decoder708.h" />

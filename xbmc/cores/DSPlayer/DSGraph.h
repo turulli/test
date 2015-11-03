@@ -42,7 +42,7 @@
 #include "windowing/windows/winsystemwin32.h"
 #include "cores/IPlayer.h"
 #include "filesystem/File.h"
-#include "cores/VideoPlayer/VideoRenderers/RenderManager.h"
+#include "VideoRenderers/RenderDSManager.h"
 
 #include "DSMessage.h"
 
@@ -69,7 +69,7 @@ class CFGManager;
 class CDSGraph
 {
 public:
-  CDSGraph(CDVDClock* pClock, IPlayerCallback& callback, CRenderManager& renderManager);
+  CDSGraph(CDVDClock* pClock, IPlayerCallback& callback, CRenderDSManager& renderManager);
   virtual ~CDSGraph();
 
   /** Determine if the graph can seek
@@ -184,7 +184,7 @@ private:
   int m_iCurrentFrameRefreshCycle;
 
   IPlayerCallback& m_callback;
-  CRenderManager& m_renderManager;
+  CRenderDSManager& m_renderManager;
 
   struct SPlayerState
   {

@@ -29,7 +29,7 @@
 
 #include "../DSPlayer/DSUtil/SmartPtr.h"
 #include "threads/CriticalSection.h"
-#include "../VideoPlayer/VideoRenderers/BaseRenderer.h"
+#include "BaseDSRenderer.h"
 #include "guilib/D3DResource.h"
 #include "../VideoPlayer/VideoRenderers/RenderCapture.h"
 #include "settings/VideoSettings.h"
@@ -39,7 +39,7 @@
 class CBaseTexture;
 class IPaintCallback;
 
-class CWinDsRenderer : public CBaseRenderer
+class CWinDsRenderer : public CBaseDSRenderer
 {
 public:
   CWinDsRenderer();

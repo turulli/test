@@ -20,17 +20,23 @@
  *
  */
 
+#ifndef HAS_DS_PLAYER
+#error DSPlayer's header file included without HAS_DS_PLAYER defined
+#endif
+
 #include <list>
 
-#include "cores/VideoPlayer/VideoRenderers/BaseRenderer.h"
+#include "BaseDSRenderer.h"
+#include "cores/VideoPlayer/VideoRenderers/RenderManager.h"
 #include "cores/VideoPlayer/VideoRenderers/OverlayRenderer.h"
 #include "guilib/Geometry.h"
 #include "guilib/Resolution.h"
 #include "threads/SharedSection.h"
 #include "settings/VideoSettings.h"
-#include "OverlayRenderer.h"
 #include <deque>
 #include "PlatformDefs.h"
+#include "Videorenderers/WinDsRenderer.h"
+#include "IPaintCallback.h"
 #include "threads/Event.h"
 #include "DVDClock.h"
 
@@ -43,17 +49,18 @@ struct DVDVideoPicture;
 
 #define ERRORBUFFSIZE 30
 
-class CWinRenderer;
+class IPaintCallback;
+class CWinDSRenderer;
 class CMMALRenderer;
 class CLinuxRenderer;
 class CLinuxRendererGL;
 class CLinuxRendererGLES;
 
-class CRenderManager
+class CRenderDSManager : public CRenderManager
 {
 public:
-  CRenderManager(CDVDClock &clock);
-  ~CRenderManager();
+  CRenderDSManager(CDVDClock &clock);
+  ~CRenderDSManager();
 
   // Functions called from render thread
   void GetVideoRect(CRect &source, CRect &dest, CRect &view);
@@ -70,7 +77,7 @@ public:
   void UpdateResolution();
   void TriggerUpdateResolution(float fps, int width, int flags);
   void SetViewMode(int iViewMode);
-  void PreInit();
+  void PreInit(RENDERERTYPE rendtype = RENDERER_NORMAL);
   void UnInit();
   bool Flush();
   bool IsConfigured() const;
@@ -79,6 +86,8 @@ public:
   void ReleaseRenderCapture(CRenderCapture* capture);
   void Capture(CRenderCapture *capture, unsigned int width, unsigned int height, int flags);
   void ManageCaptures();
+  void NewFrame();
+
 
   // Functions called from GUI
   bool Supports(ERENDERFEATURE feature);
@@ -101,7 +110,24 @@ public:
    * @param orientation
    * @param numbers of kept buffer references
    */
-  bool Configure(DVDVideoPicture& picture, float fps, unsigned flags, unsigned int orientation, int buffers = 0);
+  bool Configure(unsigned int width, unsigned int height, unsigned int d_width, unsigned int d_height, float fps, unsigned flags, ERenderFormat format, unsigned extended_format, unsigned int orientation, int buffers = 0);
+  inline void RegisterCallback(IPaintCallback *callback)
+  {
+    CSharedLock lock(m_sharedSection);
+    if (m_pRenderer)
+      m_pRenderer->RegisterCallback(callback);
+  }
+  inline void UnregisterCallback()
+  {
+    CSharedLock lock(m_sharedSection);
+    if (m_pRenderer)
+      m_pRenderer->UnregisterCallback();
+  }
+  inline void OnAfterPresent()
+  {
+    if (m_pRenderer)
+      m_pRenderer->OnAfterPresent();
+  }
 
   int AddVideoPicture(DVDVideoPicture& picture);
 
@@ -133,6 +159,8 @@ public:
 
   // Get renderer info, can be called before configure
   CRenderInfo GetRenderInfo();
+
+  void UpdateDisplayLatencyForMadvr(float fps);
 
   /**
    * If player uses buffering it has to wait for a buffer before it calls
@@ -170,7 +198,7 @@ protected:
   void CreateRenderer();
   void DeleteRenderer();
 
-  CBaseRenderer *m_pRenderer;
+  CBaseDSRenderer *m_pRenderer;
   OVERLAY::CRenderer m_overlays;
   CSharedSection m_sharedSection;
   bool m_bTriggerUpdateResolution;
@@ -178,6 +206,7 @@ protected:
   int m_waitForBufferCount;
   int m_rendermethod;
   bool m_renderedOverlay;
+  RENDERERTYPE m_pRendererType;
 
   enum EPRESENTSTEP
   {

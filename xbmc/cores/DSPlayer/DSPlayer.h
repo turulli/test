@@ -29,7 +29,7 @@
 #endif
 
 #include "cores/IPlayer.h"
-#include "cores/VideoPlayer/VideoRenderers/RenderManager.h"
+#include "Videorenderers/RenderDSManager.h"
 #include "threads/Thread.h"
 #include "threads/SingleLock.h"
 #include "cores/DSPlayer/Utils/StdString.h"
@@ -353,6 +353,6 @@ protected:
   bool m_HasVideo;
   bool m_HasAudio;
 
-  CRenderManager m_renderManager;
+  CRenderDSManager m_renderManager;
 };
 

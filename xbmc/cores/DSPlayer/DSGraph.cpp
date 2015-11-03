@@ -71,7 +71,7 @@ using namespace KODI::MESSAGING;
 
 CDSGraph* g_dsGraph = NULL;
 
-CDSGraph::CDSGraph(CDVDClock* pClock, IPlayerCallback& callback, CRenderManager& renderManager)
+CDSGraph::CDSGraph(CDVDClock* pClock, IPlayerCallback& callback, CRenderDSManager& renderManager)
   : m_pGraphBuilder(NULL),
   m_iCurrentFrameRefreshCycle(0),
   m_callback(callback),

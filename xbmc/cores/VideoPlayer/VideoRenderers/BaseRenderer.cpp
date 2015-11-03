@@ -34,11 +34,6 @@
 #include "utils/SystemInfo.h"
 #include "settings/AdvancedSettings.h"
 #include "cores/VideoPlayer/VideoRenderers/RenderFlags.h"
-#ifdef HAS_DS_PLAYER
-#include "MadvrCallback.h"
-#include "Application.h"
-#include "DSPlayer.h"
-#endif
 
 
 CBaseRenderer::CBaseRenderer()
@@ -263,10 +258,6 @@ void CBaseRenderer::CalcNormalDisplayRect(float offsetX, float offsetY, float sc
     m_oldDestRect = m_destRect;
     m_oldRenderOrientation = m_renderOrientation;
   }
-#ifdef HAS_DS_PLAYER
-  if (CMadvrCallback::Get()->UsingMadvr())
-    CDSPlayer::PostMessage(new CDSMsg(CDSMsg::MADVR_SET_WINDOW_POS), false);
-#endif
 }
 
 //***************************************************************************************
@@ -466,7 +457,6 @@ void CBaseRenderer::SetViewMode(int viewMode)
     { // now we need to set CDisplaySettings::GetInstance().GetPixelRatio() so that
       // outputFrameRatio = 16:9.
       CDisplaySettings::GetInstance().SetPixelRatio((16.0f / 9.0f) / sourceFrameRatio);
-
     }
     else
     { // stretch to the limits of the 16:9 screen.
