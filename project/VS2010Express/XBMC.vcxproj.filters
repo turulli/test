@@ -3316,6 +3316,12 @@
     <ClCompile Include="..\..\xbmc\cores\DSPlayer\Utils\uri.cpp">
       <Filter>cores\DSPlayer\Utils</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\xbmc\cores\DSPlayer\EVRCallback.cpp">
+      <Filter>cores\DSPlayer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\cores\DSPlayer\Filters\EvrSharedRender.cpp">
+      <Filter>cores\DSPlayer\Filters\Video Renderers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\xbmc\win32\pch.h">
@@ -6453,6 +6459,12 @@
     </ClInclude>
     <ClInclude Include="..\..\xbmc\cores\DSPlayer\Utils\uri.h">
       <Filter>cores\DSPlayer\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\cores\DSPlayer\EVRCallback.h">
+      <Filter>cores\DSPlayer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\cores\DSPlayer\Filters\EvrSharedRender.h">
+      <Filter>cores\DSPlayer\Filters\Video Renderers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
