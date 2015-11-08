@@ -458,9 +458,11 @@ HRESULT CFGLoader::LoadFilterRules(const CFileItem& _pFileItem)
 
 
   START_PERFORMANCE_COUNTER
-    if (FAILED(CFilterCoreFactory::GetSubsFilter(pFileItem, filter, CGraphFilters::Get()->IsUsingDXVADecoder())))
+    if (FAILED(CFilterCoreFactory::GetSubsFilter(pFileItem, filter, CGraphFilters::Get()->IsUsingDXVADecoder()))
+      || (CSettings::Get().GetInt("dsplayer.filtersmanagement") == INTERNALFILTERS && CSettings::Get().GetString("dsplayer.videorenderer") == "EVR")
+      )
     {
-    CGraphFilters::Get()->SetHasSubFilter(false);
+      CGraphFilters::Get()->SetHasSubFilter(false);
     }
     else 
     {
